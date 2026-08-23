@@ -1,12 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Compass, Globe, ArrowRight, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { InterventionFlow } from "@/components/InterventionFlow";
-import { Action, Card, Pill } from "@/components/ui-kit";
-import { FEATURED_PRODUCT, SECOND_PRODUCT } from "@/data/seed";
-import type { ProductContext } from "@/services/types";
-import { brl } from "@/utils/format";
+import { Card } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,11 +19,11 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: MomentPage,
+  component: HomePage,
 });
 
-function MomentPage() {
-  const [active, setActive] = useState<ProductContext | null>(null);
+function HomePage() {
+  const router = useRouter();
 
   return (
     <AppShell>
@@ -37,9 +32,9 @@ function MomentPage() {
           <span className="text-[22px] font-semibold tracking-[-0.04em]">DeBoa</span>
           <Link
             to="/como-pensa"
-            className="text-[13px] font-medium text-muted-foreground underline-offset-4"
+            className="text-[13px] font-medium text-muted-foreground underline-offset-4 hover:underline"
           >
-            Como o DeBoa pensa
+            Como funciona
           </Link>
         </div>
         <p className="mt-6 text-[30px] font-semibold leading-[1.1] tracking-[-0.035em]">
@@ -50,80 +45,89 @@ function MomentPage() {
         </p>
       </header>
 
+      {/* Seção: Primeiros passos */}
       <section className="mt-9">
         <div className="flex items-center gap-2">
-          <span className="animate-orb h-2 w-2 rounded-full bg-accent" />
+          <span className="h-2 w-2 rounded-full bg-accent" />
           <h2 className="text-[13px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-            Momento de decisão
+            Primeiros passos
           </h2>
         </div>
 
-        <Card className="mt-4">
-          <Pill>{FEATURED_PRODUCT.merchant}</Pill>
-          <p className="mt-4 text-[19px] font-medium tracking-tight">
-            {FEATURED_PRODUCT.name}
-          </p>
-          <p className="mt-1 text-[30px] font-semibold tracking-[-0.03em]">
-            {brl(FEATURED_PRODUCT.price)}
-          </p>
-          <div className="mt-6">
-            <Action variant="accent" onClick={() => setActive(FEATURED_PRODUCT)}>
-              Estou prestes a comprar
-            </Action>
-          </div>
-        </Card>
-
-        <Card className="mt-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-            <div className="min-w-0">
-              <p className="truncate text-[16px] font-medium tracking-tight">
-                {SECOND_PRODUCT.name}
-              </p>
-              <p className="text-[13px] text-muted-foreground">
-                {brl(SECOND_PRODUCT.price)} · {SECOND_PRODUCT.category}
-              </p>
+        <div className="mt-4 space-y-3">
+          {/* Card: Simular decisão */}
+          <Card className="border-accent/20 bg-accent/[0.04]">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/10">
+                <Compass className="h-6 w-6 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[17px] font-semibold tracking-tight">
+                  Simule uma decisão
+                </h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  Diga o que você está pensando em comprar e veja na hora a análise do DeBoa.
+                </p>
+                <button
+                  onClick={() => router.navigate({ to: "/decidir" })}
+                  className="mt-3 flex items-center gap-1.5 text-[14px] font-medium text-accent hover:underline"
+                >
+                  Simular agora
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => setActive(SECOND_PRODUCT)}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
-              aria-label="Simular compra do tênis"
-            >
-              <ArrowUpRight className="h-5 w-5" />
-            </button>
-          </div>
-        </Card>
+          </Card>
 
-        <p className="mt-4 px-1 text-[12px] leading-relaxed text-muted-foreground">
-          Simulação baseada em um perfil de teste. Antes de decidir, pergunte ao DeBoa.
-        </p>
+          {/* Card: Como funciona na prática */}
+          <Card>
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <Globe className="h-6 w-6 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[17px] font-semibold tracking-tight">
+                  Enquanto você navega
+                </h3>
+                <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
+                  Quando você estiver em um site de compras e encontrar um produto, o DeBoa pode te ajudar a decidir com base no seu perfil financeiro.
+                </p>
+                <button
+                  onClick={() => router.navigate({ to: "/como-pensa" })}
+                  className="mt-3 flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
+                >
+                  Entender como funciona
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </Card>
+        </div>
       </section>
 
+      {/* Seção: Configurar perfil */}
       <section className="mt-8 space-y-3">
-        <Link to="/mapa" className="block">
+        <Link to="/meu-mapa" className="block">
           <Card className="border-accent/25 bg-accent/6">
-            <p className="text-[16px] font-medium tracking-tight">Meu Mapa</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">
-              Quanto melhor eu entender sua vida, melhor posso te ajudar a decidir.
-            </p>
-          </Card>
-        </Link>
-        <Link to="/decidir" className="block">
-          <Card className="bg-primary text-primary-foreground shadow-lift">
-            <p className="text-[16px] font-medium tracking-tight">Simule uma decisão</p>
-            <p className="mt-1 text-[13px] opacity-70">
-              Diga o que você está pensando em comprar e o DeBoa analisa.
-            </p>
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 shrink-0 text-accent" />
+              <div>
+                <p className="text-[16px] font-medium tracking-tight">
+                  Montar Mapa Financeiro
+                </p>
+                <p className="mt-0.5 text-[13px] text-muted-foreground">
+                  Quanto melhor eu te conhecer, melhores serão as análises.
+                </p>
+              </div>
+            </div>
           </Card>
         </Link>
       </section>
 
-      {active ? (
-        <InterventionFlow
-          product={active}
-          source="moment"
-          onClose={() => setActive(null)}
-        />
-      ) : null}
+      {/* Footer */}
+      <p className="mt-8 px-1 text-[13px] leading-relaxed text-muted-foreground/60">
+        O DeBoa não dá conselhos financeiros. Ele te ajuda a pensar antes de decidir.
+      </p>
     </AppShell>
   );
 }

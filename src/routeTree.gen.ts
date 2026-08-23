@@ -13,11 +13,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ComoPensaRouteImport } from './routes/como-pensa'
 import { Route as DecidirRouteImport } from './routes/decidir'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as LandingRouteImport } from './routes/landing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as MeuMapaRouteImport } from './routes/meu-mapa'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-email'
 import { Route as AuthMigrateRouteImport } from './routes/auth/migrate'
 
 const IndexRoute = IndexRouteImport.update({
@@ -40,6 +44,11 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LandingRoute = LandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -55,14 +64,29 @@ const MeuMapaRoute = MeuMapaRouteImport.update({
   path: '/meu-mapa',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthConfirmEmailRoute = AuthConfirmEmailRouteImport.update({
+  id: '/auth/confirm-email',
+  path: '/auth/confirm-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthMigrateRoute = AuthMigrateRouteImport.update({
@@ -76,11 +100,15 @@ export interface FileRoutesByFullPath {
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meu-mapa': typeof MeuMapaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/migrate': typeof AuthMigrateRoute
 }
 export interface FileRoutesByTo {
@@ -88,11 +116,15 @@ export interface FileRoutesByTo {
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meu-mapa': typeof MeuMapaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/migrate': typeof AuthMigrateRoute
 }
 export interface FileRoutesById {
@@ -101,11 +133,15 @@ export interface FileRoutesById {
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
   '/meu-mapa': typeof MeuMapaRoute
+  '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/auth/confirm-email': typeof AuthConfirmEmailRoute
   '/auth/migrate': typeof AuthMigrateRoute
 }
 export interface FileRouteTypes {
@@ -115,11 +151,15 @@ export interface FileRouteTypes {
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/landing'
     | '/login'
     | '/mapa'
     | '/meu-mapa'
+    | '/onboarding'
     | '/perfil'
+    | '/welcome'
     | '/auth/callback'
+    | '/auth/confirm-email'
     | '/auth/migrate'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,11 +167,15 @@ export interface FileRouteTypes {
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/landing'
     | '/login'
     | '/mapa'
     | '/meu-mapa'
+    | '/onboarding'
     | '/perfil'
+    | '/welcome'
     | '/auth/callback'
+    | '/auth/confirm-email'
     | '/auth/migrate'
   id:
     | '__root__'
@@ -139,11 +183,15 @@ export interface FileRouteTypes {
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/landing'
     | '/login'
     | '/mapa'
     | '/meu-mapa'
+    | '/onboarding'
     | '/perfil'
+    | '/welcome'
     | '/auth/callback'
+    | '/auth/confirm-email'
     | '/auth/migrate'
   fileRoutesById: FileRoutesById
 }
@@ -152,11 +200,15 @@ export interface RootRouteChildren {
   ComoPensaRoute: typeof ComoPensaRoute
   DecidirRoute: typeof DecidirRoute
   HistoricoRoute: typeof HistoricoRoute
+  LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
   MeuMapaRoute: typeof MeuMapaRoute
+  OnboardingRoute: typeof OnboardingRoute
   PerfilRoute: typeof PerfilRoute
+  WelcomeRoute: typeof WelcomeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthConfirmEmailRoute: typeof AuthConfirmEmailRoute
   AuthMigrateRoute: typeof AuthMigrateRoute
 }
 
@@ -190,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/landing': {
+      id: '/landing'
+      path: '/landing'
+      fullPath: '/landing'
+      preLoaderRoute: typeof LandingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -211,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeuMapaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/perfil': {
       id: '/perfil'
       path: '/perfil'
@@ -218,11 +284,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/confirm-email': {
+      id: '/auth/confirm-email'
+      path: '/auth/confirm-email'
+      fullPath: '/auth/confirm-email'
+      preLoaderRoute: typeof AuthConfirmEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/migrate': {
@@ -240,11 +320,15 @@ const rootRouteChildren: RootRouteChildren = {
   ComoPensaRoute: ComoPensaRoute,
   DecidirRoute: DecidirRoute,
   HistoricoRoute: HistoricoRoute,
+  LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
   MeuMapaRoute: MeuMapaRoute,
+  OnboardingRoute: OnboardingRoute,
   PerfilRoute: PerfilRoute,
+  WelcomeRoute: WelcomeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  AuthConfirmEmailRoute: AuthConfirmEmailRoute,
   AuthMigrateRoute: AuthMigrateRoute,
 }
 export const routeTree = rootRouteImport

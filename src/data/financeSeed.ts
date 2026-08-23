@@ -91,16 +91,16 @@ export const HABIT_CATALOG = [
 ];
 
 export const GOAL_TEMPLATES = [
-  { emoji: "🏠", name: "Comprar uma casa", target: 80000 },
-  { emoji: "✈️", name: "Fazer uma viagem", target: 15000 },
-  { emoji: "🚗", name: "Comprar um carro", target: 45000 },
-  { emoji: "🎓", name: "Estudar", target: 5000 },
-  { emoji: "💰", name: "Criar reserva de emergência", target: 12000 },
-  { emoji: "🌴", name: "Aposentadoria", target: 100000 },
-  { emoji: "💻", name: "Comprar algo importante", target: 6000 },
-  { emoji: "❤️", name: "Casamento", target: 30000 },
-  { emoji: "🚀", name: "Abrir um negócio", target: 25000 },
-  { emoji: "🎯", name: "Outro objetivo", target: 3000 },
+  { emoji: "🏠", name: "Comprar minha casa", target: 200000, kind: "home" as const },
+  { emoji: "✈️", name: "Fazer uma viagem", target: 15000, kind: "custom" as const },
+  { emoji: "🚗", name: "Comprar um carro", target: 45000, kind: "custom" as const },
+  { emoji: "🎓", name: "Estudar", target: 5000, kind: "custom" as const },
+  { emoji: "💰", name: "Criar reserva de emergência", target: 12000, kind: "custom" as const },
+  { emoji: "🌴", name: "Aposentadoria", target: 100000, kind: "custom" as const },
+  { emoji: "💻", name: "Comprar algo importante", target: 6000, kind: "custom" as const },
+  { emoji: "❤️", name: "Casamento", target: 30000, kind: "custom" as const },
+  { emoji: "🚀", name: "Abrir um negócio", target: 25000, kind: "custom" as const },
+  { emoji: "🎯", name: "Outro objetivo", target: 3000, kind: "custom" as const },
 ];
 
 function futureMonth(monthsAhead: number) {
@@ -118,6 +118,7 @@ export const EMERGENCY_GOAL: Goal = {
   deadline: futureMonth(18),
   priority: "Alta",
   kind: "emergency",
+  homeDetails: null,
 };
 
 export const EMPTY_PROFILE: FinancialProfile = {

@@ -169,6 +169,237 @@ export function goalMath(goal: Goal, today = new Date()): GoalMath {
   };
 }
 
+/**
+ * FGTS Home Buying Intelligence
+ *
+ * Calcula o potencial de compra de imóvel usando FGTS como parte da entrada.
+ * Baseado nas regras do Programa Minha Casa Minha Vida / FGTS:
+ * - Pode usar até 100% do saldo do FGTS para entrada
+ * - Valor máximo de imóvel: R$ 350.000 (MCMV Faixa 3 - 2025)
+ * - Financiamento máximo: ~80% do valor do imóvel
+ * - Taxa de juros aproximada: 0.5% ao mês (SAC)
+ * - Prazo máximo: 420 meses (35 anos)
+ * - Prestação ideal: até 30% da renda líquida
+ */
+
+export type FgtsHomeAnalysis = {
+  /** Valor máximo do imóvel que o usuário pode comprar */
+  maxPropertyValue: number;
+  /** Valor da entrada disponível (FGTS + poupança) */
+  downPayment: number;
+  /** Percentual de entrada */
+  downPaymentPercent: number;
+  /** Valor necessário de financiamento */
+  financingNeeded: number;
+  /** Estimativa de prestação mensal (SAC - primeira parcela) */
+  estimatedMonthlyPayment: number;
+  /** Percentual da renda comprometido com a prestação */
+  incomeCommitmentPercent: number;
+  /** Se a prestação cabe no orçamento (<= 30% da renda) */
+  isAffordable: boolean;
+  /** Valor que falta para tornar a compra viável */
+  gapToAffordability: number;
+  /** Sugestão de faixa de preço ideal */
+  recommendedRange: { min: number; max: number };
+  /** Tempo estimado para juntar o restante necessário */
+  monthsToSaveGap: number;
+  /** Score de viabilidade (0-100) */
+  viabilityScore: number;
+  /** Mensagem personalizada */
+  message: string;
+};
+
+const FGTS_MAX_PROPERTY_VALUE = 350_000;
+const FGTS_FINANCING_RATE = 0.005; // 0.5% ao mês (SAC)
+const FGTS_MAX_TERM = 420; // 35 anos em meses
+const FGTS_IDEAL_COMMITMENT = 0.30; // 30% da renda
+
+/**
+ * Calcula a primeira prestação de um financiamento SAC.
+ * As prestações decrescem ao longo do tempo, então a primeira é a maior.
+ */
+function sacFirstInstallment(
+  principal: number,
+  monthlyRate: number,
+  months: number,
+): number {
+  if (principal <= 0 || months <= 0) return 0;
+  const amortization = principal / months;
+  const firstInterest = principal * monthlyRate;
+  return Math.round(amortization + firstInterest);
+}
+
+/**
+ * Analisa o potencial de compra de imóvel usando FGTS.
+ */
+export function analyzeFgtsHomePurchase(
+  fgtsBalance: number,
+  netIncome: number,
+  liquidAssets: { checking: number; yieldAccount: number; savings: number; investments: number; cash: number },
+  essentialExpenses: EssentialExpenses,
+  targetPropertyPrice?: number,
+): FgtsHomeAnalysis {
+  // Dinheiro disponível para entrada (FGTS + poupança + conta remunerada)
+  const savingsForDownPayment =
+    liquidAssets.savings + liquidAssets.yieldAccount + (liquidAssets.investments * 0.7);
+  const downPayment = fgtsBalance + savingsForDownPayment;
+
+  // Renda disponível após despesas essenciais
+  const essential = essentialTotal(essentialExpenses);
+  const disposableIncome = Math.max(netIncome - essential, 0);
+  const maxMonthlyPayment = netIncome * FGTS_IDEAL_COMMITMENT;
+
+  // Se o usuário especificou um imóvel alvo, calculamos a viabilidade
+  if (targetPropertyPrice && targetPropertyPrice > 0) {
+    const price = Math.min(targetPropertyPrice, FGTS_MAX_PROPERTY_VALUE);
+    const financingNeeded = Math.max(price - downPayment, 0);
+    const downPaymentPercent = price > 0 ? downPayment / price : 0;
+    const estimatedMonthlyPayment = sacFirstInstallment(
+      financingNeeded,
+      FGTS_FINANCING_RATE,
+      FGTS_MAX_TERM,
+    );
+    const incomeCommitmentPercent = netIncome > 0 ? estimatedMonthlyPayment / netIncome : 0;
+    const isAffordable = incomeCommitmentPercent <= FGTS_IDEAL_COMMITMENT;
+    const gapToAffordability = isAffordable
+      ? 0
+      : Math.max(
+          0,
+          estimatedMonthlyPayment - maxMonthlyPayment,
+        );
+
+    // Quanto tempo para juntar o gap
+    const monthsToSaveGap =
+      gapToAffordability > 0 && disposableIncome > 0
+        ? Math.ceil(gapToAffordability / Math.max(disposableIncome * 0.3, 1))
+        : 0;
+
+    // Score de viabilidade
+    let score = 0;
+    if (downPaymentPercent >= 0.2) score += 40;
+    else if (downPaymentPercent >= 0.1) score += 25;
+    else score += 10;
+
+    if (incomeCommitmentPercent <= 0.2) score += 35;
+    else if (incomeCommitmentPercent <= 0.3) score += 25;
+    else score += 10;
+
+    if (fgtsBalance > 0) score += 15;
+    if (savingsForDownPayment > 0) score += 10;
+
+    const viabilityScore = Math.min(100, score);
+
+    // Mensagem personalizada
+    let message = "";
+    if (viabilityScore >= 70) {
+      message = `Com seu FGTS de ${formatMoney(fgtsBalance)} e sua poupança, você tem uma boa entrada de ${formatMoney(downPayment)}. O financiamento cabe no seu orçamento! 🏠`;
+    } else if (viabilityScore >= 40) {
+      message = `Você já tem ${formatMoney(downPayment)} de entrada (${(downPaymentPercent * 100).toFixed(0)}% do imóvel). Com mais alguns meses de planejamento, sua compra fica viável.`;
+    } else {
+      message = `Seu FGTS de ${formatMoney(fgtsBalance)} é um ótimo começo! Sugiro explorar imóveis um pouco abaixo desse valor ou fortalecer sua poupança por mais alguns meses.`;
+    }
+
+    // Faixa recomendada
+    const recommendedMax = Math.min(
+      FGTS_MAX_PROPERTY_VALUE,
+      Math.round(downPayment / 0.2), // 20% de entrada
+    );
+    const recommendedMin = Math.round(recommendedMax * 0.6);
+
+    return {
+      maxPropertyValue: price,
+      downPayment: Math.round(downPayment),
+      downPaymentPercent: Math.round(downPaymentPercent * 100) / 100,
+      financingNeeded: Math.round(financingNeeded),
+      estimatedMonthlyPayment,
+      incomeCommitmentPercent: Math.round(incomeCommitmentPercent * 100) / 100,
+      isAffordable,
+      gapToAffordability: Math.round(gapToAffordability),
+      recommendedRange: { min: recommendedMin, max: recommendedMax },
+      monthsToSaveGap,
+      viabilityScore,
+      message,
+    };
+  }
+
+  // Sem imóvel alvo: calcula o máximo que pode pagar
+  // Encontra o maior valor de imóvel onde a prestação cabe em 30% da renda
+  let maxPropertyValue = 0;
+  let bestFinancing = 0;
+  let bestPayment = 0;
+
+  // Busca binária para encontrar o valor máximo
+  let low = 0;
+  let high = FGTS_MAX_PROPERTY_VALUE;
+  for (let i = 0; i < 50; i++) {
+    const mid = Math.round((low + high) / 2);
+    const financing = Math.max(mid - downPayment, 0);
+    const payment = sacFirstInstallment(financing, FGTS_FINANCING_RATE, FGTS_MAX_TERM);
+    if (payment <= maxMonthlyPayment) {
+      maxPropertyValue = mid;
+      bestFinancing = financing;
+      bestPayment = payment;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  const downPaymentPercent = maxPropertyValue > 0 ? downPayment / maxPropertyValue : 0;
+  const incomeCommitmentPercent = netIncome > 0 ? bestPayment / netIncome : 0;
+  const isAffordable = incomeCommitmentPercent <= FGTS_IDEAL_COMMITMENT;
+  const gapToAffordability = 0;
+
+  let score = 0;
+  if (downPaymentPercent >= 0.2) score += 40;
+  else if (downPaymentPercent >= 0.1) score += 25;
+  else score += 10;
+  if (incomeCommitmentPercent <= 0.2) score += 35;
+  else if (incomeCommitmentPercent <= 0.3) score += 25;
+  else score += 10;
+  if (fgtsBalance > 0) score += 15;
+  if (savingsForDownPayment > 0) score += 10;
+  const viabilityScore = Math.min(100, score);
+
+  let message = "";
+  if (maxPropertyValue >= 150_000) {
+    message = `Com seu FGTS de ${formatMoney(fgtsBalance)}, você pode financiar um imóvel de até ${formatMoney(maxPropertyValue)}! 🏠`;
+  } else if (maxPropertyValue > 0) {
+    message = `Com seu FGTS, você já pode começar a pensar em um imóvel de até ${formatMoney(maxPropertyValue)}. Que tal definir esse objetivo?`;
+  } else {
+    message = `Seu FGTS de ${formatMoney(fgtsBalance)} é um ótimo começo. Continue fortalecendo sua poupança para dar o próximo passo.`;
+  }
+
+  const recommendedMax = Math.min(
+    FGTS_MAX_PROPERTY_VALUE,
+    Math.round(downPayment / 0.2),
+  );
+  const recommendedMin = Math.round(recommendedMax * 0.6);
+
+  return {
+    maxPropertyValue: Math.round(maxPropertyValue),
+    downPayment: Math.round(downPayment),
+    downPaymentPercent: Math.round(downPaymentPercent * 100) / 100,
+    financingNeeded: Math.round(bestFinancing),
+    estimatedMonthlyPayment: Math.round(bestPayment),
+    incomeCommitmentPercent: Math.round(incomeCommitmentPercent * 100) / 100,
+    isAffordable,
+    gapToAffordability: 0,
+    recommendedRange: { min: recommendedMin, max: recommendedMax },
+    monthsToSaveGap: 0,
+    viabilityScore,
+    message,
+  };
+}
+
+function formatMoney(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 0,
+  }).format(Math.round(value));
+}
+
 /** Faixa sugerida de reserva, em meses de despesas essenciais. */
 export function emergencyMonthsRange(employmentType: EmploymentType | null) {
   const variable =

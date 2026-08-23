@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Home, Plus, Sparkles, Trash2, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { Action, Card, Pill } from "@/components/ui-kit";
 import {
@@ -22,6 +22,7 @@ import {
   LIQUID_FIELDS,
 } from "@/data/financeSeed";
 import {
+  analyzeFgtsHomePurchase,
   calculateEstimatedFGTSMonthly,
   cardTotals,
   emergencyRange,
@@ -494,13 +495,426 @@ function futureMonth(monthsAhead: number) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/* ─── Componente de inteligência FGTS para compra de imóvel ─── */
+
+function FgtsHomeIntelligence({
+  profile,
+  goal,
+  onUpdateGoal,
+}: {
+  profile: FinancialProfile;
+  goal: Goal;
+  onUpdateGoal: (id: string, patch: Partial<Goal>) => void;
+}) {
+  const gross = profile.knowsGross && profile.grossIncome
+    ? profile.grossIncome
+    : estimateGrossFromNet(profile.netIncome);
+  const fgtsMonthly = calculateEstimatedFGTSMonthly(gross);
+  const analysis = analyzeFgtsHomePurchase(
+    profile.fgtsBalance,
+    totalNetIncome(profile),
+    profile.liquidAssets,
+    profile.essentialExpenses,
+    goal.homeDetails?.propertyValue || undefined,
+  );
+
+  const isCLT = profile.employmentType === "CLT";
+  const propertyValue = goal.homeDetails?.propertyValue ?? analysis.recommendedRange.max;
+  const useFgts = goal.homeDetails?.useFgts ?? true;
+  const additionalDownPayment = goal.homeDetails?.additionalDownPayment ?? 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Cabeçalho da inteligência FGTS */}
+      <div className="rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/8 to-accent/3 p-4">
+        <div className="flex items-center gap-2">
+          <Home className="h-5 w-5 text-accent" />
+          <span className="text-[13px] font-semibold tracking-tight text-accent">
+            Inteligência Imobiliária DeBoa
+          </span>
+        </div>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+          {analysis.message}
+        </p>
+      </div>
+
+      {/* Seletor de valor do imóvel */}
+      <div>
+        <p className="mb-2 text-[13px] font-medium text-muted-foreground">
+          Qual o valor do imóvel que você deseja?
+        </p>
+        <MoneyField
+          label="Valor do imóvel"
+          value={propertyValue}
+          onValueChange={(v) =>
+            onUpdateGoal(goal.id, {
+              target: v,
+              homeDetails: {
+                ...goal.homeDetails!,
+                propertyValue: v,
+              },
+            })
+          }
+        />
+      </div>
+
+      {/* Grid de indicadores */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-muted/60 p-3">
+          <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+            Entrada total
+          </p>
+          <p className="mt-1 text-[18px] font-semibold tracking-tight text-accent">
+            {brl(analysis.downPayment)}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            FGTS {brl(profile.fgtsBalance)} + poupança
+          </p>
+        </div>
+        <div className="rounded-2xl bg-muted/60 p-3">
+          <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+            % de entrada
+          </p>
+          <p className="mt-1 text-[18px] font-semibold tracking-tight">
+            {(analysis.downPaymentPercent * 100).toFixed(0)}%
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {analysis.downPaymentPercent >= 0.2 ? "✅ Ideal (≥20%)" : "📈 Abaixo do ideal"}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-muted/60 p-3">
+          <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+            Prestação estimada
+          </p>
+          <p className="mt-1 text-[18px] font-semibold tracking-tight">
+            {brl(analysis.estimatedMonthlyPayment)}/mês
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            SAC • 35 anos • {(analysis.incomeCommitmentPercent * 100).toFixed(0)}% da renda
+          </p>
+        </div>
+        <div className="rounded-2xl bg-muted/60 p-3">
+          <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+            Viabilidade
+          </p>
+          <p className="mt-1 text-[18px] font-semibold tracking-tight">
+            {analysis.viabilityScore}/100
+          </p>
+          <Progress
+            className="mt-1"
+            value={analysis.viabilityScore / 100}
+          />
+        </div>
+      </div>
+
+      {/* Faixa recomendada */}
+      <div className="rounded-2xl border border-border/70 bg-surface p-3">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="h-4 w-4 text-accent" />
+          <span className="text-[12px] font-medium text-muted-foreground">
+            Faixa de imóvel recomendada para você
+          </span>
+        </div>
+        <p className="mt-1 text-[16px] font-semibold tracking-tight">
+          {brl(analysis.recommendedRange.min)} – {brl(analysis.recommendedRange.max)}
+        </p>
+        <div className="mt-2 flex gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              onUpdateGoal(goal.id, {
+                target: analysis.recommendedRange.min,
+                homeDetails: {
+                  ...goal.homeDetails!,
+                  propertyValue: analysis.recommendedRange.min,
+                },
+              })
+            }
+            className="rounded-full border border-border bg-muted px-3 py-1.5 text-[11px] font-medium active:scale-[0.98]"
+          >
+            Usar {brl(analysis.recommendedRange.min)}
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onUpdateGoal(goal.id, {
+                target: analysis.recommendedRange.max,
+                homeDetails: {
+                  ...goal.homeDetails!,
+                  propertyValue: analysis.recommendedRange.max,
+                },
+              })
+            }
+            className="rounded-full border border-accent/30 bg-accent/10 px-3 py-1.5 text-[11px] font-medium text-accent active:scale-[0.98]"
+          >
+            Usar {brl(analysis.recommendedRange.max)}
+          </button>
+        </div>
+      </div>
+
+      {/* Projeção FGTS */}
+      {isCLT ? (
+        <div className="rounded-2xl bg-muted/50 p-3">
+          <p className="text-[11px] font-medium text-muted-foreground">
+            Projeção do seu FGTS
+          </p>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-[12px] font-semibold">{brl(fgtsMonthly)}</p>
+              <p className="text-[9px] text-muted-foreground">Depósito/mês</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold">{brl(profile.fgtsBalance + fgtsMonthly * 12)}</p>
+              <p className="text-[9px] text-muted-foreground">Em 1 ano</p>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold">{brl(profile.fgtsBalance + fgtsMonthly * 60)}</p>
+              <p className="text-[9px] text-muted-foreground">Em 5 anos</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Recomendação personalizada */}
+      <div className="rounded-2xl border border-accent/20 bg-accent/6 p-4">
+        <div className="flex items-start gap-2">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+          <div>
+            <p className="text-[12px] font-semibold text-accent">Recomendação DeBoa</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+              {analysis.viabilityScore >= 70
+                ? `Seu momento é excelente! Com ${brl(analysis.downPayment)} de entrada, você pode financiar um imóvel de até ${brl(analysis.maxPropertyValue)}. A prestação de ${brl(analysis.estimatedMonthlyPayment)} cabe no seu orçamento.`
+                : analysis.viabilityScore >= 40
+                  ? `Você está no caminho certo! Faltam pequenos ajustes. Continue usando o FGTS como alavanca — ele já representa ${brl(profile.fgtsBalance)} de entrada.`
+                  : `Comece fortalecendo sua entrada. Com ${brl(profile.fgtsBalance)} de FGTS, você já tem uma base. Junte mais ${brl(Math.max(0, Math.round(analysis.recommendedRange.max * 0.2 - analysis.downPayment)))} para dar o próximo passo.`}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Caixinha de objetivo editável ─── */
+
+function GoalBox({
+  goal,
+  onUpdate,
+  onRemove,
+  capacity,
+  profile,
+}: {
+  goal: Goal;
+  onUpdate: (id: string, patch: Partial<Goal>) => void;
+  onRemove: (id: string) => void;
+  capacity: number;
+  profile: FinancialProfile;
+}) {
+  const [editing, setEditing] = useState(false);
+  const math = goalMath(goal);
+  const gap = math.monthlyRequiredContribution - capacity;
+  const isHome = goal.kind === "home";
+  const useFgts = goal.homeDetails?.useFgts ?? true;
+
+  return (
+    <Card className="space-y-4 overflow-hidden">
+      {/* Header da caixinha */}
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setEditing(!editing)}
+          className="flex items-center gap-2"
+        >
+          <Pill className={isHome ? "border-accent/25 bg-accent/10 text-accent" : ""}>
+            {goal.emoji} {goal.name}
+          </Pill>
+          {!editing ? (
+            <span className="text-[11px] text-muted-foreground underline underline-offset-2">
+              editar
+            </span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          aria-label="Remover objetivo"
+          onClick={() => onRemove(goal.id)}
+          className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground active:scale-[0.98]"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Progresso (sempre visível) */}
+      <div>
+        <div className="flex items-center justify-between text-[13px]">
+          <span className="text-muted-foreground">Progresso</span>
+          <span className="font-medium">
+            {brl(goal.saved)} / {brl(goal.target)}
+          </span>
+        </div>
+        <Progress className="mt-2" value={goal.target ? goal.saved / goal.target : 0} />
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {math.monthlyRequiredContribution > 0
+            ? `${brl(math.monthlyRequiredContribution)}/mês · ${math.monthsRemaining} meses restantes`
+            : "Meta já atingida 🎉"}
+        </p>
+      </div>
+
+      {/* Inteligência FGTS para objetivo de casa */}
+      {isHome && !editing ? (
+        <FgtsHomeIntelligence profile={profile} goal={goal} onUpdateGoal={onUpdate} />
+      ) : null}
+
+      {/* Modo de edição */}
+      {editing ? (
+        <div className="animate-rise space-y-4 border-t border-border/50 pt-4">
+          <TextField
+            label="Nome do objetivo"
+            value={goal.name}
+            onValueChange={(name) => onUpdate(goal.id, { name })}
+          />
+          <MoneyField
+            label="Valor desejado"
+            value={goal.target}
+            onValueChange={(target) => onUpdate(goal.id, { target })}
+          />
+          <MoneyField
+            label="Valor já guardado"
+            value={goal.saved}
+            onValueChange={(saved) => onUpdate(goal.id, { saved })}
+          />
+          <label className="block">
+            <span className="text-[13px] font-medium text-muted-foreground">Prazo</span>
+            <input
+              type="month"
+              value={goal.deadline}
+              onChange={(e) => onUpdate(goal.id, { deadline: e.target.value })}
+              className="mt-2 min-h-13 w-full rounded-2xl border border-border bg-surface px-4 text-[16px] outline-none"
+            />
+          </label>
+          <div>
+            <p className="mb-2 text-[13px] font-medium text-muted-foreground">Prioridade</p>
+            <ChoiceGrid
+              options={["Alta", "Média", "Baixa"]}
+              value={goal.priority}
+              onSelect={(v) => onUpdate(goal.id, { priority: v as GoalPriority })}
+            />
+          </div>
+
+          {/* Para objetivo de casa, mostra configurações FGTS */}
+          {isHome ? (
+            <div className="space-y-3 rounded-2xl border border-accent/15 bg-accent/5 p-3">
+              <p className="text-[12px] font-medium text-accent">Configurações do FGTS</p>
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] text-muted-foreground">Usar FGTS na entrada</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdate(goal.id, {
+                      homeDetails: {
+                        ...goal.homeDetails!,
+                        useFgts: !useFgts,
+                      },
+                    })
+                  }
+                  className={`h-6 w-11 rounded-full transition-colors ${
+                    useFgts ? "bg-accent" : "bg-border"
+                  }`}
+                >
+                  <span
+                    className={`block h-5 w-5 rounded-full bg-white transition-transform ${
+                      useFgts ? "translate-x-5.5" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              <MoneyField
+                label="Entrada adicional (poupança)"
+                value={goal.homeDetails?.additionalDownPayment ?? 0}
+                onValueChange={(v) =>
+                  onUpdate(goal.id, {
+                    homeDetails: {
+                      ...goal.homeDetails!,
+                      additionalDownPayment: v,
+                    },
+                  })
+                }
+              />
+            </div>
+          ) : null}
+
+          <div className="rounded-2xl bg-muted/60 p-4">
+            <p className="text-[13px] leading-relaxed">
+              Para chegar lá nesse prazo, você precisaria guardar aproximadamente{" "}
+              <strong>{brl(math.monthlyRequiredContribution)}</strong> por mês (
+              {math.monthsRemaining} meses).
+            </p>
+            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              Hoje você consegue guardar aproximadamente <strong>{brl(capacity)}</strong>.
+            </p>
+            {gap > 0 ? (
+              <p className="mt-2 text-[13px] leading-relaxed text-accent">
+                Temos uma diferença de {brl(gap)}. Posso te ajudar a encontrar pequenos
+                ajustes para aproximar esse objetivo.
+              </p>
+            ) : (
+              <p className="mt-2 text-[13px] leading-relaxed text-accent">
+                Esse ritmo cabe no seu momento atual.
+              </p>
+            )}
+          </div>
+
+          <Action variant="outline" onClick={() => setEditing(false)}>
+            Fechar edição
+          </Action>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+/* ─── Componente principal StepGoals ─── */
+
 export function StepGoals({ profile, update }: StepProps) {
   const range = emergencyRange(profile.essentialExpenses, profile.employmentType);
   const capacity = Math.max(monthlySavingCapacity(profile), 0);
   const emergency = profile.goals.find((g) => g.kind === "emergency");
+  const isCLT = profile.employmentType === "CLT";
 
   function patchGoal(id: string, patch: Partial<Goal>) {
     update({ goals: profile.goals.map((g) => (g.id === id ? { ...g, ...patch } : g)) });
+  }
+
+  function removeGoal(id: string) {
+    update({ goals: profile.goals.filter((g) => g.id !== id) });
+  }
+
+  function addGoal(template: (typeof GOAL_TEMPLATES)[number]) {
+    const isHome = template.kind === "home";
+    const homeDetails = isHome
+      ? {
+          propertyValue: template.target,
+          useFgts: true,
+          additionalDownPayment: 0,
+        }
+      : null;
+
+    update({
+      goals: [
+        ...profile.goals,
+        {
+          id: uid(),
+          emoji: template.emoji,
+          name: template.name,
+          target: template.target,
+          saved: 0,
+          deadline: futureMonth(isHome ? 60 : 18),
+          priority: isHome ? "Alta" as GoalPriority : "Média" as GoalPriority,
+          kind: isHome ? "home" as const : "custom" as const,
+          homeDetails,
+        },
+      ],
+    });
   }
 
   return (
@@ -509,36 +923,25 @@ export function StepGoals({ profile, update }: StepProps) {
       title="Por que você quer organizar melhor seu dinheiro?"
       subtitle="Objetivo é o que dá sentido a cada decisão. Escolha quantos quiser."
     >
+      {/* Grid de templates */}
       <div className="grid grid-cols-2 gap-2">
         {GOAL_TEMPLATES.map((t) => (
           <button
             key={t.name}
             type="button"
-            onClick={() =>
-              update({
-                goals: [
-                  ...profile.goals,
-                  {
-                    id: uid(),
-                    emoji: t.emoji,
-                    name: t.name,
-                    target: t.target,
-                    saved: 0,
-                    deadline: futureMonth(18),
-                    priority: "Média",
-                    kind: "custom",
-                  },
-                ],
-              })
-            }
-            className="min-h-16 rounded-2xl border border-border bg-surface p-3 text-left text-[13px] font-medium leading-snug active:scale-[0.98]"
+            onClick={() => addGoal(t)}
+            className="min-h-16 rounded-2xl border border-border bg-surface p-3 text-left text-[13px] font-medium leading-snug transition-all active:scale-[0.98] hover:border-accent/30"
           >
             <span className="block text-[16px]">{t.emoji}</span>
             {t.name}
+            {t.kind === "home" && isCLT ? (
+              <span className="ml-1 text-[10px] text-accent">FGTS</span>
+            ) : null}
           </button>
         ))}
       </div>
 
+      {/* Reserva de emergência */}
       {emergency ? (
         <Card className="space-y-3 border-accent/25 bg-accent/6">
           <Pill className="border-accent/25 bg-accent/10 text-accent">
@@ -548,8 +951,7 @@ export function StepGoals({ profile, update }: StepProps) {
             Seu custo essencial é <strong>{brl(range.essential)}</strong>/mês. Pelo seu
             perfil, uma boa faixa de reserva seria entre{" "}
             <strong>{brl(range.min)}</strong> e <strong>{brl(range.max)}</strong> (
-            {range.minMonths}–{range.maxMonths} meses de despesas essenciais). É uma
-            estimativa educacional — o valor ideal depende da sua situação.
+            {range.minMonths}–{range.maxMonths} meses de despesas essenciais).
           </p>
           <MoneyField
             label="Meta da sua reserva"
@@ -584,106 +986,56 @@ export function StepGoals({ profile, update }: StepProps) {
         </Card>
       ) : null}
 
+      {/* Caixinhas de objetivos (não emergenciais) */}
       {profile.goals
         .filter((g) => g.kind !== "emergency")
-        .map((goal) => {
-          const math = goalMath(goal);
-          const gap = math.monthlyRequiredContribution - capacity;
-          return (
-            <Card key={goal.id} className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Pill>
-                  {goal.emoji} {goal.name}
-                </Pill>
-                <button
-                  type="button"
-                  aria-label="Remover objetivo"
-                  onClick={() =>
-                    update({ goals: profile.goals.filter((g) => g.id !== goal.id) })
-                  }
-                  className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <TextField
-                label="Nome"
-                value={goal.name}
-                onValueChange={(name) => patchGoal(goal.id, { name })}
-              />
-              <MoneyField
-                label="Valor desejado"
-                value={goal.target}
-                onValueChange={(target) => patchGoal(goal.id, { target })}
-              />
-              <MoneyField
-                label="Valor já guardado"
-                value={goal.saved}
-                onValueChange={(saved) => patchGoal(goal.id, { saved })}
-              />
-              <label className="block">
-                <span className="text-[13px] font-medium text-muted-foreground">Prazo</span>
-                <input
-                  type="month"
-                  value={goal.deadline}
-                  onChange={(e) => patchGoal(goal.id, { deadline: e.target.value })}
-                  className="mt-2 min-h-13 w-full rounded-2xl border border-border bg-surface px-4 text-[16px] outline-none"
-                />
-              </label>
-              <div>
-                <p className="mb-2 text-[13px] font-medium text-muted-foreground">Prioridade</p>
-                <ChoiceGrid
-                  options={["Alta", "Média", "Baixa"]}
-                  value={goal.priority}
-                  onSelect={(v) => patchGoal(goal.id, { priority: v as GoalPriority })}
-                />
-              </div>
-              <div className="rounded-2xl bg-muted/60 p-4">
-                <p className="text-[13px] leading-relaxed">
-                  Para chegar lá nesse prazo, você precisaria guardar aproximadamente{" "}
-                  <strong>{brl(math.monthlyRequiredContribution)}</strong> por mês (
-                  {math.monthsRemaining} meses).
-                </p>
-                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                  Hoje você consegue guardar aproximadamente <strong>{brl(capacity)}</strong>.
-                </p>
-                {gap > 0 ? (
-                  <p className="mt-2 text-[13px] leading-relaxed text-accent">
-                    Temos uma diferença de {brl(gap)}. Posso te ajudar a encontrar pequenos
-                    ajustes para aproximar esse objetivo.
-                  </p>
-                ) : (
-                  <p className="mt-2 text-[13px] leading-relaxed text-accent">
-                    Esse ritmo cabe no seu momento atual.
-                  </p>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-
-      <Card className="space-y-3">
-        <p className="text-[15px] font-medium tracking-tight">Suas caixinhas</p>
-        <p className="text-[12px] text-muted-foreground">
-          Metas virtuais — nada de dinheiro real é movimentado aqui.
-        </p>
-        {profile.goals.map((g) => (
-          <div key={g.id} className="rounded-2xl border border-border/70 p-3">
-            <div className="flex items-center justify-between text-[14px]">
-              <span className="font-medium tracking-tight">
-                {g.emoji} {g.name}
-              </span>
-              <span className="text-muted-foreground">
-                {g.target ? Math.round((g.saved / g.target) * 100) : 0}%
-              </span>
-            </div>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">
-              {brl(g.saved)} / {brl(g.target)}
-            </p>
-            <Progress className="mt-2" value={g.target ? g.saved / g.target : 0} />
-          </div>
+        .map((goal) => (
+          <GoalBox
+            key={goal.id}
+            goal={goal}
+            onUpdate={patchGoal}
+            onRemove={removeGoal}
+            capacity={capacity}
+            profile={profile}
+          />
         ))}
-      </Card>
+
+      {/* Sumário das caixinhas */}
+      {profile.goals.length > 0 ? (
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[15px] font-medium tracking-tight">Suas caixinhas</p>
+            <span className="text-[12px] text-muted-foreground">
+              {profile.goals.length} {profile.goals.length === 1 ? "ativa" : "ativas"}
+            </span>
+          </div>
+          <p className="text-[12px] text-muted-foreground">
+            Metas virtuais — nada de dinheiro real é movimentado aqui.
+          </p>
+          {profile.goals.map((g) => {
+            const pct = g.target ? Math.round((g.saved / g.target) * 100) : 0;
+            return (
+              <div key={g.id} className="rounded-2xl border border-border/70 p-3 transition-all hover:border-accent/20">
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="font-medium tracking-tight">
+                    {g.emoji} {g.name}
+                    {g.kind === "home" ? (
+                      <span className="ml-1.5 rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] text-accent">
+                        FGTS
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-muted-foreground">{pct}%</span>
+                </div>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  {brl(g.saved)} / {brl(g.target)}
+                </p>
+                <Progress className="mt-2" value={g.target ? g.saved / g.target : 0} />
+              </div>
+            );
+          })}
+        </Card>
+      ) : null}
     </StepShell>
   );
 }

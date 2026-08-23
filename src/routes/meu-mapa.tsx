@@ -138,24 +138,52 @@ function MapPage() {
         <h2 className="text-[13px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
           Suas caixinhas
         </h2>
-        <Card className="mt-3 space-y-3">
-          {r.goals.map((g) => (
-            <div key={g.goal.id}>
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="font-medium tracking-tight">
-                  {g.goal.emoji} {g.goal.name}
-                </span>
-                <span className="text-muted-foreground">
-                  {Math.round(g.progress * 100)}%
-                </span>
+        <Card className="mt-3 space-y-4">
+          {r.goals.map((g) => {
+            const isHome = g.goal.kind === "home";
+            return (
+              <div key={g.goal.id}>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="font-medium tracking-tight">
+                    {g.goal.emoji} {g.goal.name}
+                    {isHome ? (
+                      <span className="ml-1.5 rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] text-accent">
+                        FGTS
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {Math.round(g.progress * 100)}%
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[12px] text-muted-foreground">
+                  {brl(g.goal.saved)} / {brl(g.goal.target)} · {brl(g.monthlyRequiredContribution)}
+                  /mês por {g.monthsRemaining} meses
+                </p>
+                <Progress className="mt-2" value={g.progress} />
+                {isHome && g.goal.homeDetails ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-muted/50 p-2">
+                      <p className="text-[9px] uppercase tracking-[0.06em] text-muted-foreground">
+                        Imóvel
+                      </p>
+                      <p className="text-[13px] font-semibold tracking-tight">
+                        {brl(g.goal.homeDetails.propertyValue)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-muted/50 p-2">
+                      <p className="text-[9px] uppercase tracking-[0.06em] text-muted-foreground">
+                        Entrada FGTS
+                      </p>
+                      <p className="text-[13px] font-semibold tracking-tight text-accent">
+                        {brl(profile.fgtsBalance)}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-              <p className="mt-0.5 text-[12px] text-muted-foreground">
-                {brl(g.goal.saved)} / {brl(g.goal.target)} · {brl(g.monthlyRequiredContribution)}
-                /mês por {g.monthsRemaining} meses
-              </p>
-              <Progress className="mt-2" value={g.progress} />
-            </div>
-          ))}
+            );
+          })}
         </Card>
       </section>
 

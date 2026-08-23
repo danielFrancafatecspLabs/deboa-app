@@ -100,7 +100,18 @@ export type Goal = {
   /** yyyy-mm */
   deadline: string;
   priority: GoalPriority;
-  kind: "emergency" | "custom";
+  kind: "emergency" | "custom" | "home";
+  /** Campos específicos para objetivo de compra de imóvel */
+  homeDetails: {
+    /** Valor estimado do imóvel desejado */
+    propertyValue: number;
+    /** Usar FGTS como parte da entrada */
+    useFgts: boolean;
+    /** Valor adicional de entrada (poupança, etc) */
+    additionalDownPayment: number;
+    /** Cidade/região do imóvel */
+    location?: string;
+  } | null;
 };
 
 export type Pact = {

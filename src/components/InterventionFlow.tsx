@@ -32,8 +32,19 @@ export function InterventionFlow({
 }) {
   const { context: testContext, addDecision, rateDecision } = useDeBoa();
   const { profile, hasProfile } = useFinancialProfile();
-  const context = hasProfile ? toUserContext(profile) : testContext;
-  const notes = hasProfile ? contextualNotes(profile, product) : [];
+
+  // Contexto com fallback seguro — nunca quebra mesmo se profile estiver vazio
+  let context: UserContext;
+  let notes: string[];
+  try {
+    context = hasProfile && profile ? toUserContext(profile) : testContext;
+    notes = hasProfile && profile ? contextualNotes(profile, product) : [];
+  } catch (err) {
+    console.error("InterventionFlow: error building context", err);
+    context = testContext;
+    notes = [];
+  }
+
   const [stage, setStage] = useState<Stage>("analyzing");
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<DecisionResult | null>(null);
@@ -47,22 +58,46 @@ export function InterventionFlow({
     if (started.current) return;
     started.current = true;
     trackEvent("decision_started", { product: product.name, price: product.price, source });
+
+    // Safety timeout: se algo der errado, avança mesmo assim após 5s
+    const safetyTimer = setTimeout(() => {
+      if (stage === "analyzing") {
+        try {
+          const r = evaluateDecision(context, product, { source });
+          setResult(r);
+          setStage("intervention");
+        } catch {
+          // Fallback mínimo se evaluateDecision falhar
+          setStage("intervention");
+        }
+      }
+    }, 5000);
+
     const timers = [
       setTimeout(() => setStep(1), 700),
       setTimeout(() => setStep(2), 1300),
       setTimeout(() => setStep(3), 1900),
       setTimeout(() => {
-        const r = evaluateDecision(context, product, { source });
-        setResult(r);
-        setStage("intervention");
-        trackEvent("context_analyzed", { product: product.name });
-        trackEvent("intervention_shown", {
-          product: product.name,
-          level: r.interventionLevel,
-        });
+        try {
+          const r = evaluateDecision(context, product, { source });
+          setResult(r);
+          setStage("intervention");
+          trackEvent("context_analyzed", { product: product.name });
+          trackEvent("intervention_shown", {
+            product: product.name,
+            level: r.interventionLevel,
+          });
+        } catch (err) {
+          console.error("InterventionFlow: evaluateDecision failed", err);
+          // Safety fallback — avança mesmo com erro
+          setStage("intervention");
+        }
       }, 2400),
     ];
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(safetyTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

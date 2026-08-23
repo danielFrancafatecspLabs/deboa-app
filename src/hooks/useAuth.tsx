@@ -18,13 +18,15 @@ type AuthStore = {
   /** True while an auth operation is in flight. */
   loading: boolean;
   /** Sign in with email + password. */
-  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailConfirm?: boolean }>;
   /** Create a new account with email + password. */
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   /** Sign out the current user. */
   signOut: () => Promise<void>;
   /** Send a password-reset email. */
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  /** Re-send the email confirmation link. */
+  resendConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
 };
 
 const AuthContext = createContext<AuthStore | null>(null);
@@ -49,8 +51,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for future auth changes (sign in / sign out across tabs)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+
+      // On first sign in (OAuth or email), redirect to welcome
+      // if user has no local data yet
+      if (event === "SIGNED_IN") {
+        const ctxRaw = localStorage.getItem("deboa.context");
+        const histRaw = localStorage.getItem("deboa.history");
+        const profRaw = localStorage.getItem("deboa.financialProfile");
+        const hasLocalData = !!(ctxRaw || histRaw || profRaw);
+
+        // Only redirect if we're not already on login/welcome/migrate
+        const path = window.location.pathname;
+        if (
+          !hasLocalData &&
+          path !== "/welcome" &&
+          path !== "/auth/migrate" &&
+          path !== "/login"
+        ) {
+          window.location.href = "/welcome";
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -59,9 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Auth actions ──────────────────────────────────────────────────────
   const signIn = useCallback(async (email: string, password: string) => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    return { error };
+
+    // Detecta se o email não foi confirmado
+    const needsEmailConfirm =
+      error?.message?.toLowerCase().includes("email not confirmed") ?? false;
+
+    return { error, needsEmailConfirm };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
@@ -86,9 +113,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const resendConfirmation = useCallback(async (email: string) => {
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setLoading(false);
+    return { error };
+  }, []);
+
   const value = useMemo(
-    () => ({ initialized, user, loading, signIn, signUp, signOut, resetPassword }),
-    [initialized, user, loading, signIn, signUp, signOut, resetPassword],
+    () => ({ initialized, user, loading, signIn, signUp, signOut, resetPassword, resendConfirmation }),
+    [initialized, user, loading, signIn, signUp, signOut, resetPassword, resendConfirmation],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
