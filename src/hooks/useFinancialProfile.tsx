@@ -91,53 +91,56 @@ export function FinancialProfileProvider({ children }: { children: ReactNode }) 
     }
   }, []);
 
-  const update = useCallback(
-    (patch: Partial<FinancialProfile>) => {
-      setProfile((prev) => {
-        const next: FinancialProfile = {
-          ...prev,
-          ...patch,
-          createdAt:
-            prev.createdAt === new Date(0).toISOString()
-              ? new Date().toISOString()
-              : prev.createdAt,
-          updatedAt: new Date().toISOString(),
-        };
-        persist(next);
-        syncProfile(next);
-        return next;
-      });
-    },
-    [persist, syncProfile],
-  );
+  // localStorage is cheap, so it tracks every change.
+  useEffect(() => {
+    if (!hydrated) return;
+    persist(profile);
+  }, [hydrated, profile, persist]);
+
+  // The server sync is a round trip, and the map is typed a character at a
+  // time — without this it fired a request per keystroke. One write once the
+  // typing settles is enough.
+  useEffect(() => {
+    if (!hydrated) return;
+    const t = setTimeout(() => void syncProfile(profile), 800);
+    return () => clearTimeout(t);
+  }, [hydrated, profile, syncProfile]);
+
+  const update = useCallback((patch: Partial<FinancialProfile>) => {
+    // Pure: saving happens in the effects above. React calls updaters twice
+    // under StrictMode, so a network call in here fired everything twice.
+    setProfile((prev) => ({
+      ...prev,
+      ...patch,
+      createdAt:
+        prev.createdAt === new Date(0).toISOString()
+          ? new Date().toISOString()
+          : prev.createdAt,
+      updatedAt: new Date().toISOString(),
+    }));
+  }, []);
 
   const addPact = useCallback(
     (pact: Pact) => {
       setProfile((prev) => {
         if (prev.pacts.some((p) => p.id === pact.id)) return prev;
-        const next = {
+        return {
           ...prev,
           pacts: [pact, ...prev.pacts],
           updatedAt: new Date().toISOString(),
         };
-        persist(next);
-        syncProfile(next);
-        return next;
       });
     },
-    [persist, syncProfile],
+    [],
   );
 
   const removePact = useCallback(
     (id: string) => {
       setProfile((prev) => {
-        const next = { ...prev, pacts: prev.pacts.filter((p) => p.id !== id) };
-        persist(next);
-        syncProfile(next);
-        return next;
+        return { ...prev, pacts: prev.pacts.filter((p) => p.id !== id) };
       });
     },
-    [persist, syncProfile],
+    [],
   );
 
   const clearProfile = useCallback(() => {

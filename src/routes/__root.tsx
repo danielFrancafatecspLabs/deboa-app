@@ -132,7 +132,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/**
+ * Whether this bundle is the standalone SPA (Capacitor / GitHub Pages) rather
+ * than the TanStack Start server build. Set by vite.config.capacitor.ts.
+ */
+const STANDALONE_SPA = Boolean(import.meta.env["VITE_STANDALONE_SPA"]);
+
 function RootShell({ children }: { children: ReactNode }) {
+  // The standalone build mounts into <div id="root"> in index.html, which
+  // already provides <html>, <head> and <body>. Rendering a second document
+  // there puts <html> inside a <div>: the browser drops it, so React's tree
+  // can never match the real DOM and the reconciler retries forever. The
+  // symptom was the whole app freezing the moment any input took focus —
+  // which is every screen of the Mapa. Only the server entry renders the
+  // document itself.
+  //
+  // <HeadContent /> stays either way: React 19 hoists title/meta/link into
+  // <head> from wherever they are rendered, so per-route metadata still works.
+  // <Scripts /> is Start's hydration payload and has nothing to inject here.
+  if (STANDALONE_SPA) {
+    return (
+      <>
+        <HeadContent />
+        {children}
+      </>
+    );
+  }
+
   return (
     <html lang="en">
       <head>

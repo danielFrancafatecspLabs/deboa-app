@@ -14,6 +14,12 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  // __root.tsx renders a whole <html> document for the TanStack Start server
+  // entry. This build has no server: it mounts into <div id="root"> in
+  // index.html, so that document must not be rendered again. See RootShell.
+  define: {
+    "import.meta.env.VITE_STANDALONE_SPA": JSON.stringify("1"),
+  },
   build: {
     outDir: "dist-capacitor",
     emptyOutDir: true,
