@@ -85,8 +85,8 @@ function DecidePage() {
       </div>
 
       <p className="mt-4 px-1 text-[12px] leading-relaxed text-muted-foreground">
-        A recomendação usa o seu contexto de teste — altere os valores em Perfil e veja a
-        resposta mudar.
+        A resposta vem do seu Mapa Financeiro. Em Perfil você muda qualquer número e vê a
+        recomendação mudar junto.
       </p>
 
       {active ? (
