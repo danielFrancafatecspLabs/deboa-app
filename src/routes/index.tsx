@@ -90,13 +90,14 @@ function HomePage() {
                   Enquanto você navega
                 </h3>
                 <p className="mt-1 text-[14px] leading-relaxed text-muted-foreground">
-                  Quando você estiver em um site de compras e encontrar um produto, o DeBoa pode te ajudar a decidir com base no seu perfil financeiro.
+                  Achou um produto em qualquer loja? Toque em Compartilhar e escolha o DeBoa.
+                  Eu abro com a compra preenchida e digo o que ela faz com o seu mês.
                 </p>
                 <button
-                  onClick={() => router.navigate({ to: "/como-pensa" })}
+                  onClick={() => router.navigate({ to: "/ativar" })}
                   className="mt-3 flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
                 >
-                  Entender como funciona
+                  Ativar no meu aparelho
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>

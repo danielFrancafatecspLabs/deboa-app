@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AtivarRouteImport } from './routes/ativar'
 import { Route as ComoPensaRouteImport } from './routes/como-pensa'
 import { Route as DecidirRouteImport } from './routes/decidir'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as InterceptarRouteImport } from './routes/interceptar'
 import { Route as LandingRouteImport } from './routes/landing'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MapaRouteImport } from './routes/mapa'
@@ -30,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AtivarRoute = AtivarRouteImport.update({
+  id: '/ativar',
+  path: '/ativar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComoPensaRoute = ComoPensaRouteImport.update({
   id: '/como-pensa',
   path: '/como-pensa',
@@ -43,6 +50,11 @@ const DecidirRoute = DecidirRouteImport.update({
 const HistoricoRoute = HistoricoRouteImport.update({
   id: '/historico',
   path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InterceptarRoute = InterceptarRouteImport.update({
+  id: '/interceptar',
+  path: '/interceptar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingRoute = LandingRouteImport.update({
@@ -103,9 +115,11 @@ const AuthMigrateRoute = AuthMigrateRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ativar': typeof AtivarRoute
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/interceptar': typeof InterceptarRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -120,9 +134,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ativar': typeof AtivarRoute
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/interceptar': typeof InterceptarRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -138,9 +154,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ativar': typeof AtivarRoute
   '/como-pensa': typeof ComoPensaRoute
   '/decidir': typeof DecidirRoute
   '/historico': typeof HistoricoRoute
+  '/interceptar': typeof InterceptarRoute
   '/landing': typeof LandingRoute
   '/login': typeof LoginRoute
   '/mapa': typeof MapaRoute
@@ -157,9 +175,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ativar'
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/interceptar'
     | '/landing'
     | '/login'
     | '/mapa'
@@ -174,9 +194,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ativar'
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/interceptar'
     | '/landing'
     | '/login'
     | '/mapa'
@@ -191,9 +213,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ativar'
     | '/como-pensa'
     | '/decidir'
     | '/historico'
+    | '/interceptar'
     | '/landing'
     | '/login'
     | '/mapa'
@@ -209,9 +233,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AtivarRoute: typeof AtivarRoute
   ComoPensaRoute: typeof ComoPensaRoute
   DecidirRoute: typeof DecidirRoute
   HistoricoRoute: typeof HistoricoRoute
+  InterceptarRoute: typeof InterceptarRoute
   LandingRoute: typeof LandingRoute
   LoginRoute: typeof LoginRoute
   MapaRoute: typeof MapaRoute
@@ -234,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ativar': {
+      id: '/ativar'
+      path: '/ativar'
+      fullPath: '/ativar'
+      preLoaderRoute: typeof AtivarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/como-pensa': {
       id: '/como-pensa'
       path: '/como-pensa'
@@ -253,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/historico'
       fullPath: '/historico'
       preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/interceptar': {
+      id: '/interceptar'
+      path: '/interceptar'
+      fullPath: '/interceptar'
+      preLoaderRoute: typeof InterceptarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing': {
@@ -337,9 +377,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AtivarRoute: AtivarRoute,
   ComoPensaRoute: ComoPensaRoute,
   DecidirRoute: DecidirRoute,
   HistoricoRoute: HistoricoRoute,
+  InterceptarRoute: InterceptarRoute,
   LandingRoute: LandingRoute,
   LoginRoute: LoginRoute,
   MapaRoute: MapaRoute,
