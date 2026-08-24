@@ -33,6 +33,18 @@ type AuthStore = {
 
 export type OAuthProvider = "google" | "apple";
 
+/**
+ * Absolute URL of the callback route.
+ *
+ * window.location.origin stops at the host, so on a GitHub Pages project site
+ * it would send people to /auth/callback at the account root instead of
+ * /deboa-app/auth/callback. BASE_URL carries the subpath the app was built
+ * with, and is "/" everywhere else.
+ */
+function callbackUrl(query = ""): string {
+  return `${window.location.origin}${import.meta.env.BASE_URL}auth/callback${query}`;
+}
+
 const AuthContext = createContext<AuthStore | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -66,15 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profRaw = localStorage.getItem("deboa.financialProfile");
         const hasLocalData = !!(ctxRaw || histRaw || profRaw);
 
-        // Only redirect if we're not already on login/welcome/migrate
-        const path = window.location.pathname;
+        // Same subpath problem as callbackUrl: under /deboa-app/ the pathname
+        // is prefixed, so comparing it against bare routes never matched and
+        // the redirect fired from pages it should have skipped.
+        const base = import.meta.env.BASE_URL;
+        const path = window.location.pathname.slice(base.length - 1) || "/";
         if (
           !hasLocalData &&
           path !== "/welcome" &&
           path !== "/auth/migrate" &&
           path !== "/login"
         ) {
-          window.location.href = "/welcome";
+          window.location.href = `${base}welcome`;
         }
       }
     });
@@ -108,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider,
       // Without this, Supabase falls back to the project's Site URL and the
       // browser never reaches /auth/callback.
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl() },
     });
     // On success the browser leaves for the provider, so only release the
     // spinner when we are staying on this page.
@@ -125,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resetPassword = useCallback(async (email: string) => {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      redirectTo: callbackUrl("?type=recovery"),
     });
     setLoading(false);
     return { error };
