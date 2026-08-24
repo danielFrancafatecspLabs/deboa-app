@@ -50,8 +50,12 @@ export function contextualNotes(
       `Eu sei que você quer ${goal.goal.name.toLowerCase()} e ainda faltam ${brl(goal.remaining)}.`,
     );
     if (monthsDelay >= 0.5) {
+      // pt-BR uses a comma for decimals, and "mês(es)" is placeholder grammar
+      // that made it all the way into the product.
+      const amount = monthsDelay.toFixed(1).replace(".", ",");
+      const unit = monthsDelay < 2 ? "mês" : "meses";
       notes.push(
-        `Essa compra equivale a cerca de ${monthsDelay.toFixed(1)} mês(es) do que você precisa guardar para esse objetivo.`,
+        `Essa compra equivale a cerca de ${amount} ${unit} do que você precisa guardar para esse objetivo.`,
       );
     }
   }
