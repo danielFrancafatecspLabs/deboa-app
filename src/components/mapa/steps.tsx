@@ -376,7 +376,7 @@ export function StepCards({ profile, update }: StepProps) {
 
   return (
     <StepShell
-      eyebrow="Etapa 4 de 7"
+      eyebrow="Opcional"
       title="Quantos cartões de crédito você usa?"
       subtitle="Crédito não é vilão. Só preciso saber quanto do seu futuro já está comprometido."
     >
@@ -919,9 +919,9 @@ export function StepGoals({ profile, update }: StepProps) {
 
   return (
     <StepShell
-      eyebrow="Etapa 5 de 7"
-      title="Por que você quer organizar melhor seu dinheiro?"
-      subtitle="Objetivo é o que dá sentido a cada decisão. Escolha quantos quiser."
+      eyebrow="Opcional"
+      title="O que mais você quer conquistar?"
+      subtitle="Cada objetivo novo me dá mais um motivo para pesar suas decisões."
     >
       {/* Grid de templates */}
       <div className="grid grid-cols-2 gap-2">
@@ -1051,7 +1051,7 @@ export function StepHabits({ profile, update }: StepProps) {
 
   return (
     <StepShell
-      eyebrow="Etapa 6 de 7"
+      eyebrow="Opcional"
       title="Como seu dinheiro costuma escapar?"
       subtitle="Sem julgamento. Só quero enxergar os padrões junto com você."
     >

@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { Sparkles, Compass, Map, Clock, User, LogOut } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Momento", icon: Sparkles },
@@ -11,7 +12,17 @@ const NAV = [
   { to: "/perfil", label: "Perfil", icon: User },
 ] as const;
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  /**
+   * Hides the tab bar. A guided flow should not offer five ways out of itself
+   * on every screen — the exit belongs in the flow, as one deliberate choice.
+   */
+  focused = false,
+}: {
+  children: ReactNode;
+  focused?: boolean;
+}) {
   const { user, initialized } = useAuth();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,12 +78,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       </div>
 
-      <main className="mx-auto w-full max-w-md px-5 pt-safe pb-32">
+      <main className={cn("mx-auto w-full max-w-md px-5 pt-safe", focused ? "pb-16" : "pb-32")}>
         {/* Spacer for the top bar */}
         <div className="h-10" />
         {children}
       </main>
 
+      {focused ? null : (
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-surface/85 backdrop-blur-xl">
         <div className="mx-auto grid w-full max-w-md grid-cols-5 px-1 pt-2 pb-safe">
           {NAV.map(({ to, label, icon: Icon }) => (
@@ -88,6 +100,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </div>
       </nav>
+      )}
     </div>
   );
 }

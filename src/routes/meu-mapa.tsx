@@ -58,11 +58,12 @@ function MapPage() {
         </header>
         <Card>
           <p className="text-[14px] leading-relaxed text-muted-foreground">
-            Ainda não conheço seu momento. Leva poucos minutos e é tudo em etapas curtas.
+            Ainda não conheço seu momento. São <strong>quatro perguntas</strong> — depois disso
+            eu já consigo te ajudar a decidir.
           </p>
           <div className="mt-5">
             <Link to="/mapa" className="block">
-              <Action variant="accent">Criar meu mapa</Action>
+              <Action variant="accent">Começar</Action>
             </Link>
           </div>
         </Card>
@@ -242,8 +243,11 @@ function MapPage() {
           <Link to="/decidir" className="block">
             <Action variant="accent">Começar a usar o DeBoa</Action>
           </Link>
+          <Link to="/refinar" className="block">
+            <Action variant="outline">Refinar meu Mapa</Action>
+          </Link>
           <Link to="/mapa" className="block">
-            <Action variant="outline">Editar meus dados</Action>
+            <Action variant="ghost">Editar minhas respostas</Action>
           </Link>
         </div>
       </Card>
