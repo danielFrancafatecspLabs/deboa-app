@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { maskMoney, parseMoney } from "@/components/mapa/primitives";
 import { GOAL_TEMPLATES } from "@/data/financeSeed";
 import type { FinancialProfile, Goal } from "@/services/financeTypes";
 import { brl } from "@/utils/format";
@@ -91,19 +90,36 @@ export function BigMoney({
 }) {
   const ref = useRef<HTMLInputElement>(null);
 
+  // Whole reais, not centavos. Filling centavos from the right meant typing
+  // 500000 to say five thousand, and a first "4" reading back as R$ 0,04 —
+  // nobody answers "quanto entra por mês" to the cent.
+  const text = value > 0 ? new Intl.NumberFormat("pt-BR").format(value) : "";
+
   useEffect(() => {
     if (autoFocus) ref.current?.focus();
   }, [autoFocus]);
+
+  // Reformatting a controlled input resets the caret, and on iOS it lands
+  // before the digits just typed, so the next one goes to the wrong place and
+  // the field reads as frozen. Amounts are only ever appended to, so pinning
+  // the caret to the end is both correct and enough.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement === el) {
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+    }
+  }, [text]);
 
   return (
     <div className="flex items-baseline gap-2 border-b border-border pb-3 focus-within:border-accent">
       <span className="text-[24px] font-medium text-muted-foreground">R$</span>
       <input
         ref={ref}
-        inputMode="decimal"
-        placeholder="0,00"
-        value={value ? maskMoney(value) : ""}
-        onChange={(e) => onValueChange(parseMoney(e.target.value))}
+        inputMode="numeric"
+        placeholder="0"
+        value={text}
+        onChange={(e) => onValueChange(Number(e.target.value.replace(/\D/g, "")) || 0)}
         className="w-full bg-transparent text-[40px] font-semibold tracking-[-0.03em] tabular-nums outline-none placeholder:text-muted-foreground/30"
       />
     </div>
