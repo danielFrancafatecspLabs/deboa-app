@@ -1,4 +1,5 @@
 import { StrictMode } from "react";
+import { QueryClient } from "@tanstack/react-query";
 import { createRoot } from "react-dom/client";
 import {
   RouterProvider,
@@ -17,10 +18,23 @@ const history = isCapacitor
   ? createMemoryHistory({ initialEntries: ["/"] })
   : createBrowserHistory();
 
+// When served from a subpath (GitHub Pages project site), the router has to
+// strip it from URLs or every route resolves to a 404. Vite injects the value
+// the app was built with; it is "/" everywhere else, which the router ignores.
+const basepath = import.meta.env.BASE_URL;
+
+// __root.tsx is a createRootRouteWithContext route that reads queryClient
+// out of router context and hands it to QueryClientProvider. The TanStack
+// Start server entry supplies that context; this standalone SPA entry has to
+// supply it too, or the provider mounts `undefined` and the app dies on load.
+const queryClient = new QueryClient();
+
 const router = createRouter({
   routeTree,
   history,
+  context: { queryClient },
   defaultPreload: !isCapacitor,
+  ...(basepath && basepath !== "/" ? { basepath } : {}),
 });
 
 declare module "@tanstack/react-router" {
