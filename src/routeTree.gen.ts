@@ -19,6 +19,7 @@ import { Route as MapaRouteImport } from './routes/mapa'
 import { Route as MeuMapaRouteImport } from './routes/meu-mapa'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as RefinarRouteImport } from './routes/refinar'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as AuthConfirmEmailRouteImport } from './routes/auth/confirm-email'
@@ -74,6 +75,11 @@ const PerfilRoute = PerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefinarRoute = RefinarRouteImport.update({
+  id: '/refinar',
+  path: '/refinar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/meu-mapa': typeof MeuMapaRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/refinar': typeof RefinarRoute
   '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/meu-mapa': typeof MeuMapaRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/refinar': typeof RefinarRoute
   '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/meu-mapa': typeof MeuMapaRoute
   '/onboarding': typeof OnboardingRoute
   '/perfil': typeof PerfilRoute
+  '/refinar': typeof RefinarRoute
   '/welcome': typeof WelcomeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/confirm-email': typeof AuthConfirmEmailRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/meu-mapa'
     | '/onboarding'
     | '/perfil'
+    | '/refinar'
     | '/welcome'
     | '/auth/callback'
     | '/auth/confirm-email'
@@ -173,6 +183,7 @@ export interface FileRouteTypes {
     | '/meu-mapa'
     | '/onboarding'
     | '/perfil'
+    | '/refinar'
     | '/welcome'
     | '/auth/callback'
     | '/auth/confirm-email'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/meu-mapa'
     | '/onboarding'
     | '/perfil'
+    | '/refinar'
     | '/welcome'
     | '/auth/callback'
     | '/auth/confirm-email'
@@ -206,6 +218,7 @@ export interface RootRouteChildren {
   MeuMapaRoute: typeof MeuMapaRoute
   OnboardingRoute: typeof OnboardingRoute
   PerfilRoute: typeof PerfilRoute
+  RefinarRoute: typeof RefinarRoute
   WelcomeRoute: typeof WelcomeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthConfirmEmailRoute: typeof AuthConfirmEmailRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refinar': {
+      id: '/refinar'
+      path: '/refinar'
+      fullPath: '/refinar'
+      preLoaderRoute: typeof RefinarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/welcome': {
       id: '/welcome'
       path: '/welcome'
@@ -326,6 +346,7 @@ const rootRouteChildren: RootRouteChildren = {
   MeuMapaRoute: MeuMapaRoute,
   OnboardingRoute: OnboardingRoute,
   PerfilRoute: PerfilRoute,
+  RefinarRoute: RefinarRoute,
   WelcomeRoute: WelcomeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthConfirmEmailRoute: AuthConfirmEmailRoute,

@@ -1,19 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Lock } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { StepDots } from "@/components/mapa/primitives";
-import {
-  StepCards,
-  StepGoals,
-  StepHabits,
-  StepIncome,
-  StepMoney,
-  StepPlan,
-  StepYou,
-} from "@/components/mapa/steps";
+import { ESSENCIAL_STEPS } from "@/components/mapa/essencial";
 import { Action } from "@/components/ui-kit";
-import { STEPS } from "@/data/financeSeed";
 import { useFinancialProfile } from "@/hooks/useFinancialProfile";
 
 export const Route = createFileRoute("/mapa")({
@@ -23,93 +13,92 @@ export const Route = createFileRoute("/mapa")({
       {
         name: "description",
         content:
-          "Conte ao DeBoa como sua vida financeira funciona: renda, dinheiro disponível, cartões, objetivos e hábitos.",
+          "Quatro perguntas para o DeBoa entender o seu momento e começar a te ajudar a decidir.",
       },
       { property: "og:title", content: "Meu Mapa — contexto financeiro do DeBoa" },
       {
         property: "og:description",
-        content:
-          "Quanto melhor eu entender sua vida, melhor posso te ajudar a decidir.",
+        content: "Quanto melhor eu entender sua vida, melhor posso te ajudar a decidir.",
       },
     ],
   }),
   component: MapaPage,
 });
 
-const COMPONENTS = [
-  StepYou,
-  StepIncome,
-  StepMoney,
-  StepCards,
-  StepGoals,
-  StepHabits,
-  StepPlan,
-];
-
 function MapaPage() {
   const { profile, update } = useFinancialProfile();
-  const [step, setStep] = useState(Math.min(profile.completedSteps, STEPS.length - 1));
   const navigate = useNavigate();
-  const Step = COMPONENTS[step]!;
-  const last = step === STEPS.length - 1;
+  const [step, setStep] = useState(() =>
+    Math.min(
+      ESSENCIAL_STEPS.findIndex((s) => !s.isAnswered(profile)) === -1
+        ? ESSENCIAL_STEPS.length - 1
+        : ESSENCIAL_STEPS.findIndex((s) => !s.isAnswered(profile)),
+      ESSENCIAL_STEPS.length - 1,
+    ),
+  );
 
-  function next() {
+  const current = ESSENCIAL_STEPS[step]!;
+  const Step = current.Component;
+  const answered = current.isAnswered(profile);
+  const last = step === ESSENCIAL_STEPS.length - 1;
+
+  function goNext() {
     if (last) {
-      update({ completed: true, completedSteps: STEPS.length });
+      update({ completed: true, completedSteps: ESSENCIAL_STEPS.length });
       void navigate({ to: "/meu-mapa" });
       return;
     }
     update({ completedSteps: Math.max(profile.completedSteps, step + 1) });
     setStep(step + 1);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
+  }
+
+  function goBack() {
+    setStep(Math.max(step - 1, 0));
+    window.scrollTo({ top: 0 });
   }
 
   return (
-    <AppShell>
-      <header className="animate-rise pt-6 pb-6">
-        <div className="flex items-center gap-3">
-          {step > 0 ? (
-            <button
-              aria-label="Voltar"
-              onClick={() => setStep(step - 1)}
-              className="grid h-10 w-10 place-items-center rounded-full bg-muted text-muted-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-          ) : null}
-          <div>
-            <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.03em]">
-              Meu Mapa
-            </h1>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-              Quanto melhor eu entender sua vida, melhor posso te ajudar a decidir.
-            </p>
-          </div>
-        </div>
-        <div className="mt-5">
-          <StepDots total={STEPS.length} current={step} />
-          <p className="mt-2 text-[12px] uppercase tracking-[0.08em] text-muted-foreground">
-            {STEPS[step]!.title}
-          </p>
-        </div>
-      </header>
+    <AppShell focused>
+      <div className="flex items-center justify-between pt-4 pb-2">
+        {step > 0 ? (
+          <button
+            aria-label="Voltar"
+            onClick={goBack}
+            className="-ml-2 grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition-colors active:bg-muted"
+          >
+            <ArrowLeft className="h-[18px] w-[18px]" />
+          </button>
+        ) : (
+          <span className="h-10" />
+        )}
+        <button
+          onClick={() => navigate({ to: "/" })}
+          className="text-[13px] font-medium text-muted-foreground"
+        >
+          Agora não
+        </button>
+      </div>
 
       <Step profile={profile} update={update} />
 
-      <div className="mt-7 space-y-2.5">
-        <Action variant="accent" onClick={next}>
-          {last ? "Gerar meu Mapa Financeiro" : "Continuar"}
+      <div className="mt-9">
+        <Action variant="accent" onClick={goNext} disabled={!answered}>
+          {last ? "Ver meu Mapa" : "Continuar"}
         </Action>
-        {!last ? (
-          <Action variant="ghost" onClick={next}>
-            Pular por enquanto
-          </Action>
+        {!answered ? (
+          <button
+            onClick={goNext}
+            className="mt-3 w-full text-[13px] font-medium text-muted-foreground"
+          >
+            Responder depois
+          </button>
         ) : null}
       </div>
 
-      <p className="mt-5 px-1 text-[12px] leading-relaxed text-muted-foreground">
-        Seus dados ficam salvos apenas neste dispositivo. Não conectamos sua conta bancária
-        neste MVP.
+      <p className="mt-8 flex items-start gap-2 px-1 text-[12px] leading-relaxed text-muted-foreground">
+        <Lock className="mt-0.5 h-3 w-3 shrink-0" strokeWidth={2} />
+        Seus dados ficam salvos apenas neste aparelho. Não conectamos sua conta bancária.
       </p>
     </AppShell>
   );
