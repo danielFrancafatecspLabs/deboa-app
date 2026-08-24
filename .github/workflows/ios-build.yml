@@ -1,0 +1,80 @@
+name: Build iOS (.ipa)
+
+# Builds the Capacitor iOS app on a GitHub-hosted Mac, so no Mac is needed
+# locally. macOS runners are free for public repositories.
+#
+# The artifact is UNSIGNED: signing it needs an Apple certificate, and a free
+# Apple ID cannot issue one outside Xcode. Sign and install it with Sideloadly
+# or AltStore — see docs/instalar-no-iphone.md.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "ios-*"
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Build da versão web (Capacitor)
+        run: bun run cap:build
+
+      - name: Gerar o projeto iOS
+        # ios/ is not committed: Capacitor regenerates it from
+        # capacitor.config.ts, which keeps the native project disposable.
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+
+      - name: Mostrar versão do Xcode
+        run: xcodebuild -version
+
+      - name: Compilar sem assinatura
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            ONLY_ACTIVE_ARCH=NO \
+            build
+
+      - name: Empacotar em .ipa
+        # An .ipa is just a zip with the .app inside a Payload/ folder.
+        run: |
+          APP="build/Build/Products/Release-iphoneos/App.app"
+          if [ ! -d "$APP" ]; then
+            echo "App não encontrado em $APP"
+            find build/Build/Products -maxdepth 3 -name "*.app" || true
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -R "$APP" Payload/
+          zip -qry DeBoa-unsigned.ipa Payload
+          ls -lh DeBoa-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DeBoa-ios-unsigned
+          path: DeBoa-unsigned.ipa
+          retention-days: 30
+          if-no-files-found: error
