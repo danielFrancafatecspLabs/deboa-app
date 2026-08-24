@@ -43,6 +43,18 @@ declare module "@tanstack/react-router" {
   }
 }
 
+// O service worker só faz sentido na web: dentro do Capacitor os arquivos já
+// vêm do próprio aparelho. Registrado depois do load para não competir com a
+// primeira renderização.
+if (!isCapacitor && import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    const url = `${import.meta.env.BASE_URL}sw.js`;
+    navigator.serviceWorker.register(url, { scope: import.meta.env.BASE_URL }).catch(() => {
+      // Sem service worker o app funciona igual, só perde o modo offline.
+    });
+  });
+}
+
 const rootElement = document.getElementById("root");
 if (rootElement) {
   createRoot(rootElement).render(
