@@ -21,6 +21,8 @@ type AuthStore = {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null; needsEmailConfirm?: boolean }>;
   /** Create a new account with email + password. */
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  /** Sign in through an OAuth provider. Navigates away from the app on success. */
+  signInWithProvider: (provider: OAuthProvider) => Promise<{ error: AuthError | null }>;
   /** Sign out the current user. */
   signOut: () => Promise<void>;
   /** Send a password-reset email. */
@@ -28,6 +30,8 @@ type AuthStore = {
   /** Re-send the email confirmation link. */
   resendConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
 };
+
+export type OAuthProvider = "google" | "apple";
 
 const AuthContext = createContext<AuthStore | null>(null);
 
@@ -98,6 +102,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   }, []);
 
+  const signInWithProvider = useCallback(async (provider: OAuthProvider) => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      // Without this, Supabase falls back to the project's Site URL and the
+      // browser never reaches /auth/callback.
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    // On success the browser leaves for the provider, so only release the
+    // spinner when we are staying on this page.
+    if (error) setLoading(false);
+    return { error };
+  }, []);
+
   const signOut = useCallback(async () => {
     setLoading(true);
     await supabase.auth.signOut();
@@ -121,8 +139,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ initialized, user, loading, signIn, signUp, signOut, resetPassword, resendConfirmation }),
-    [initialized, user, loading, signIn, signUp, signOut, resetPassword, resendConfirmation],
+    () => ({
+      initialized,
+      user,
+      loading,
+      signIn,
+      signUp,
+      signInWithProvider,
+      signOut,
+      resetPassword,
+      resendConfirmation,
+    }),
+    [
+      initialized,
+      user,
+      loading,
+      signIn,
+      signUp,
+      signInWithProvider,
+      signOut,
+      resetPassword,
+      resendConfirmation,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
