@@ -10,20 +10,50 @@ export const Route = createFileRoute("/auth/callback")({
 function AuthCallbackPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"processing" | "done" | "error">("processing");
+  const [reason, setReason] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (session) {
-          setStatus("done");
-          // Redirect to home after a brief moment
-          setTimeout(() => router.navigate({ to: "/" }), 1000);
-        } else {
-          setStatus("error");
-        }
-      })
-      .catch(() => setStatus("error"));
+    // O provedor pode voltar com um erro no lugar do código.
+    const params = new URLSearchParams(window.location.search);
+    const providerError = params.get("error_description") ?? params.get("error");
+    if (providerError) {
+      setReason(providerError);
+      setStatus("error");
+      return;
+    }
+
+    let settled = false;
+    const succeed = () => {
+      if (settled) return;
+      settled = true;
+      setStatus("done");
+      setTimeout(() => router.navigate({ to: "/" }), 1000);
+    };
+
+    // O cliente troca o ?code= por uma sessão de forma assíncrona. Consultar
+    // getSession() direto perde essa corrida e mostra erro num login que deu
+    // certo — por isso escutamos a mudança de estado também.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) succeed();
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) succeed();
+    });
+
+    const timeout = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setReason("A resposta demorou demais para chegar.");
+      setStatus("error");
+    }, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   return (
@@ -55,7 +85,7 @@ function AuthCallbackPage() {
           <>
             <h1 className="text-xl font-semibold tracking-tight">Erro na autenticação</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Não foi possível confirmar seu login. Tente novamente.
+              {reason ?? "Não foi possível confirmar seu login. Tente novamente."}
             </p>
             <button
               onClick={() => router.navigate({ to: "/login" })}
