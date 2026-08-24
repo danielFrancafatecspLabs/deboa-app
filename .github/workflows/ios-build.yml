@@ -50,8 +50,11 @@ jobs:
       - name: Compilar sem assinatura
         run: |
           set -o pipefail
+          # Capacitor 8 uses Swift Package Manager, so `cap add ios` writes
+          # Package.swift and an .xcodeproj — there is no .xcworkspace. That
+          # file only exists on the older CocoaPods layout.
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
