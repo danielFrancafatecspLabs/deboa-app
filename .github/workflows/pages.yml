@@ -1,0 +1,62 @@
+name: Publicar app (GitHub Pages)
+
+# Publishes the static SPA build — the same bundle Capacitor wraps — so the
+# app can be installed on a phone straight from Safari, with nothing to
+# install on a computer.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish; queue at most one more.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          # Kept in step with the lockfile; see ios-build.yml.
+          bun-version: 1.3.11
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Build estático
+        # A project site is served from /<repo>/, so assets and the router
+        # both need that prefix.
+        env:
+          PUBLIC_BASE: /${{ github.event.repository.name }}/
+        run: bun run cap:build
+
+      - name: Preparar para o Pages
+        run: |
+          # Pages has no SPA rewrite, so a deep link would 404. Serving the
+          # same document from 404.html lets the router take over instead.
+          cp dist-capacitor/index.html dist-capacitor/404.html
+          touch dist-capacitor/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist-capacitor
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
