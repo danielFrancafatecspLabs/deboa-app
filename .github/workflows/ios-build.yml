@@ -76,7 +76,7 @@ jobs:
           zip -qry DeBoa-unsigned.ipa Payload
           ls -lh DeBoa-unsigned.ipa
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: DeBoa-ios-unsigned
           path: DeBoa-unsigned.ipa
