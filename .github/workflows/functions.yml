@@ -1,0 +1,60 @@
+name: Publicar Edge Functions
+
+# Publica as funções de servidor no Supabase. Existe para não depender de
+# instalar o CLI numa máquina — o deploy roda aqui, e a única coisa guardada
+# no GitHub é um token de acesso do Supabase.
+#
+# As credenciais da Pluggy NÃO passam por aqui. Elas ficam nos secrets do
+# projeto Supabase, definidas pelo painel. Um segredo a menos em um lugar a
+# menos.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+      - ".github/workflows/functions.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: hmasenjcnpajirpeushg
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Conferir se o token existe
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "Falta o secret SUPABASE_ACCESS_TOKEN no repositório."
+            echo "Gere em https://supabase.com/dashboard/account/tokens e adicione em"
+            echo "Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # --no-verify-jwt porque a checagem de usuário é feita dentro da função,
+      # depois do preflight de CORS. Ver supabase/config.toml.
+      - name: Publicar pluggy-connect-token
+        run: supabase functions deploy pluggy-connect-token --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Publicar pluggy-sync
+        run: supabase functions deploy pluggy-sync --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      - name: Conferir que respondem
+        run: |
+          # Sem token tem que dar 401 — vindo da nossa função, não da plataforma.
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "https://$PROJECT_REF.supabase.co/functions/v1/pluggy-connect-token")
+          echo "pluggy-connect-token sem autenticação respondeu HTTP $code"
+          if [ "$code" != "401" ]; then
+            echo "Esperado 401. 404 quer dizer que o deploy não pegou."
+            exit 1
+          fi

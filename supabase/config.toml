@@ -1,0 +1,14 @@
+project_id = "hmasenjcnpajirpeushg"
+
+# A plataforma verifica o JWT antes da função rodar. Isso derruba o preflight
+# de CORS, que por definição não manda Authorization — o navegador tomaria 401
+# e nunca chegaria a enviar o pedido de verdade.
+#
+# Desligar aqui não abre a porta: as duas funções chamam `requireUser()` na
+# primeira linha e recusam quem não estiver autenticado. A diferença é que a
+# recusa passa a ser nossa, com CORS na resposta, em vez de um 401 mudo.
+[functions.pluggy-connect-token]
+verify_jwt = false
+
+[functions.pluggy-sync]
+verify_jwt = false

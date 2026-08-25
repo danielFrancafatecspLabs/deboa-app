@@ -36,7 +36,74 @@ não escritos de memória:
 - `GET /accounts?itemId=…`, `GET /transactions?accountId=…&from=…`
 - `GET /items/{id}` → status e conector
 
-## Configurar
+## Configurar sem instalar nada
+
+Duas coisas em dois lugares diferentes, de propósito: as credenciais da Pluggy
+ficam no Supabase, o código é publicado pelo GitHub. Assim o segredo mora em um
+lugar só.
+
+### 1. Credenciais da Pluggy → painel do Supabase
+
+`supabase.com/dashboard` → o projeto → **Edge Functions** → **Secrets**.
+Adicione três:
+
+| Nome | Valor |
+|---|---|
+| `PLUGGY_CLIENT_ID` | seu client id |
+| `PLUGGY_CLIENT_SECRET` | o secret **novo**, depois de rotacionar |
+| `ALLOWED_ORIGINS` | `https://danielfrancafatecsplabs.github.io` |
+
+`ALLOWED_ORIGINS` é uma lista separada por vírgula. Sem ela nenhuma origem
+passa — de propósito: um curinga deixaria qualquer site chamar a função com o
+token de alguém logado.
+
+`SUPABASE_URL` e `SUPABASE_ANON_KEY` já existem no ambiente das funções; não
+precisa criar.
+
+### 2. Token de deploy → secrets do GitHub
+
+Gere em `supabase.com/dashboard/account/tokens`. No repositório:
+**Settings → Secrets and variables → Actions → New repository secret**, com o
+nome `SUPABASE_ACCESS_TOKEN`.
+
+Esse token só publica código. As credenciais da Pluggy não passam por aqui.
+
+### 3. Rodar o deploy
+
+**Actions → Publicar Edge Functions → Run workflow.**
+
+O último passo do workflow confere sozinho: chama a função sem autenticação e
+exige **401**. Se vier 404, o deploy não pegou e o job falha — em vez de você
+descobrir isso pelo app.
+
+Daí em diante, todo push que mexer em `supabase/functions/` republica.
+
+### Se preferir o terminal
+
+<details>
+<summary>Caminho com o CLI instalado</summary>
+
+```bash
+supabase login
+supabase link --project-ref hmasenjcnpajirpeushg
+
+supabase secrets set \
+  PLUGGY_CLIENT_ID=... \
+  PLUGGY_CLIENT_SECRET=... \
+  ALLOWED_ORIGINS=https://danielfrancafatecsplabs.github.io
+
+supabase functions deploy pluggy-connect-token --no-verify-jwt
+supabase functions deploy pluggy-sync --no-verify-jwt
+```
+
+O `--no-verify-jwt` não é opcional: sem ele a plataforma rejeita o preflight de
+CORS, que não carrega Authorization, e o navegador nunca chega a mandar o
+pedido. A checagem de usuário acontece dentro da função. Ver
+`supabase/config.toml`.
+
+</details>
+
+## Referência das credenciais
 
 ### 1. Guardar as credenciais no servidor
 
