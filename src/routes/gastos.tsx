@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Building2, Plus, Trash2, X } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { MoneyField } from "@/components/mapa/primitives";
 import { EditRow, Group, MoneyRow, ReadRow } from "@/components/editables";
@@ -53,12 +53,21 @@ function SpendingPage() {
             Para onde vai o seu dinheiro
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground">
-            Primeiro eu preciso saber quanto entra. São quatro perguntas.
+            Conecte seu banco e eu leio o extrato, ou responda quatro perguntas.
           </p>
         </header>
-        <Link to="/mapa" className="block">
-          <Action variant="accent">Montar meu Mapa</Action>
-        </Link>
+        {/*
+          Com o perfil vazio, conectar o banco é um caminho melhor que digitar:
+          o extrato responde as quatro perguntas sozinho.
+        */}
+        <div className="space-y-2.5">
+          <Link to="/conectar" className="block">
+            <Action variant="accent">Conectar meu banco</Action>
+          </Link>
+          <Link to="/mapa" className="block">
+            <Action variant="outline">Prefiro responder eu mesmo</Action>
+          </Link>
+        </div>
       </AppShell>
     );
   }
@@ -183,6 +192,21 @@ function SpendingPage() {
           Para onde vai o seu dinheiro.
         </h1>
       </header>
+
+      {/* O caminho curto, antes de qualquer digitação. */}
+      <Link to="/conectar" className="block">
+        <Card className="mb-4 flex items-center gap-3 border-accent/25 bg-accent/6 transition-all active:scale-[0.99]">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/12 text-accent">
+            <Building2 className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[15px] font-medium tracking-tight">Conectar meu banco</p>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+              Por Open Finance, só leitura. Eu leio o extrato e proponho os números.
+            </p>
+          </div>
+        </Card>
+      </Link>
 
       {lumped ? (
         <Card className="border-accent/25 bg-accent/6">
