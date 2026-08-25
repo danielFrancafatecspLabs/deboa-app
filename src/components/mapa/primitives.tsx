@@ -1,17 +1,23 @@
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
+/**
+ * Reais inteiros, nunca centavos.
+ *
+ * Preencher centavos da direita para a esquerda obrigava a digitar 500000
+ * para dizer cinco mil, e fazia o primeiro "4" aparecer como R$ 0,04. As
+ * quatro perguntas do Mapa já usam esta convenção; ter duas no mesmo produto
+ * é como pedir a data em formatos diferentes em cada tela.
+ */
 export function parseMoney(raw: string) {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return 0;
-  return Number(digits) / 100;
+  return Number(digits);
 }
 
 export function maskMoney(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value || 0);
+  if (!value) return "";
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 export function MoneyField({
@@ -19,7 +25,7 @@ export function MoneyField({
   hint,
   value,
   onValueChange,
-  placeholder = "0,00",
+  placeholder = "0",
 }: {
   label: string;
   hint?: string;
@@ -27,17 +33,32 @@ export function MoneyField({
   onValueChange: (n: number) => void;
   placeholder?: string;
 }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const text = maskMoney(value);
+
+  // Reformatar um input controlado zera o cursor, e no iOS ele cai antes dos
+  // dígitos recém-digitados — o campo passa a parecer travado. Valores só
+  // crescem por acréscimo, então fixar o cursor no fim resolve.
+  useEffect(() => {
+    const el = ref.current;
+    if (el && document.activeElement === el) {
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+    }
+  }, [text]);
+
   return (
     <label className="block">
       <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
       <div className="mt-2 flex items-center gap-2 rounded-2xl border border-border bg-surface px-4 focus-within:border-accent/60">
         <span className="text-[15px] text-muted-foreground">R$</span>
         <input
-          inputMode="decimal"
+          ref={ref}
+          inputMode="numeric"
           placeholder={placeholder}
-          value={value ? maskMoney(value) : ""}
+          value={text}
           onChange={(e) => onValueChange(parseMoney(e.target.value))}
-          className="min-h-13 w-full bg-transparent text-[16px] tracking-tight outline-none placeholder:text-muted-foreground/50"
+          className="min-h-13 w-full bg-transparent text-[16px] tabular-nums tracking-tight outline-none placeholder:text-muted-foreground/50"
         />
       </div>
       {hint ? (
