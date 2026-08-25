@@ -6,6 +6,7 @@ import {
   totalNetIncome,
 } from "./financeMath";
 import { financialInsightEngine } from "./financialInsightEngine";
+import { currentMonth, findPlan, planAllocated, planFree } from "./monthPlan";
 import type { FinancialProfile } from "./financeTypes";
 import type { ProductContext, UserContext } from "./types";
 
@@ -14,11 +15,26 @@ import type { ProductContext, UserContext } from "./types";
  * Converte o perfil detalhado no contexto enxuto consumido pelo agente,
  * sem que o Decision Engine precise conhecer a origem dos dados.
  */
-export function toUserContext(profile: FinancialProfile): UserContext {
+export function toUserContext(profile: FinancialProfile, today = new Date()): UserContext {
   const income = totalNetIncome(profile);
-  const cards = cardTotals(profile.creditCards);
+  const cards = cardTotals(profile.creditCards, today);
   const essential = essentialTotal(profile.essentialExpenses);
-  const goals = profile.goals.map((g) => goalMath(g));
+
+  // Com um plano fechado no mês, "disponível" deixa de ser tudo que a pessoa
+  // tem e passa a ser o que ela decidiu que pode gastar. É uma resposta muito
+  // mais dura e muito mais justa: R$ 899 num saldo de R$ 2.800 parece
+  // sustentável; nos R$ 640 que sobraram livres, não parece.
+  const plan = findPlan(profile, currentMonth(today));
+  if (plan) {
+    return {
+      monthlyIncome: plan.income,
+      availableBalance: Math.round(planFree(plan)),
+      monthlyGoal: Math.round(planAllocated(plan)),
+      upcomingCommitments: Math.round(plan.essentials + plan.bills),
+    };
+  }
+
+  const goals = profile.goals.map((g) => goalMath(g, today));
   const monthlyGoal = goals.reduce((s, g) => s + g.monthlyRequiredContribution, 0);
   return {
     monthlyIncome: income,
@@ -35,6 +51,18 @@ export function contextualNotes(
 ): string[] {
   const reading = financialInsightEngine(profile);
   const notes: string[] = [];
+
+  const plan = findPlan(profile, currentMonth());
+  if (plan) {
+    const free = planFree(plan);
+    notes.push(
+      free > 0
+        ? `Do que você separou como livre neste mês sobram ${brl(free)} — essa compra é ${Math.round(
+            (product.price / free) * 100,
+          )}% disso.`
+        : "Você já usou todo o livre que separou para este mês.",
+    );
+  }
 
   const priority = { Alta: 0, Média: 1, Baixa: 2 } as const;
   const goal = [...reading.goals]

@@ -62,4 +62,12 @@ if (rootElement) {
       <RouterProvider router={router} />
     </StrictMode>,
   );
+
+  // A marca em index.html sai assim que há algo para ver no lugar dela.
+  requestAnimationFrame(() => {
+    const splash = document.getElementById("splash");
+    if (!splash) return;
+    splash.classList.add("out");
+    window.setTimeout(() => splash.remove(), 400);
+  });
 }

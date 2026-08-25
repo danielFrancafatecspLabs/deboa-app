@@ -1,14 +1,19 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Sparkles, Compass, Map, Clock, User, LogOut } from "lucide-react";
+import { Compass, Home, LogOut, PiggyBank, User, Wallet } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
+/**
+ * A ordem é a do ciclo do dinheiro: você chega em Hoje, decide o mês no
+ * Plano, vê o progresso nas Caixinhas, consulta em Decidir. Mapa e Histórico
+ * saíram da barra — são leitura, não ação, e vivem dentro de Hoje e Perfil.
+ */
 const NAV = [
-  { to: "/", label: "Momento", icon: Sparkles },
+  { to: "/", label: "Hoje", icon: Home },
+  { to: "/plano", label: "Plano", icon: Wallet },
+  { to: "/caixinhas", label: "Caixinhas", icon: PiggyBank },
   { to: "/decidir", label: "Decidir", icon: Compass },
-  { to: "/meu-mapa", label: "Mapa", icon: Map },
-  { to: "/historico", label: "Histórico", icon: Clock },
   { to: "/perfil", label: "Perfil", icon: User },
 ] as const;
 

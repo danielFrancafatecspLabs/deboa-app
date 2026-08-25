@@ -159,6 +159,7 @@ export const EMPTY_PROFILE: FinancialProfile = {
   habits: [],
   goals: [EMERGENCY_GOAL],
   pacts: [],
+  plans: [],
 
   createdAt: new Date(0).toISOString(),
   updatedAt: new Date(0).toISOString(),

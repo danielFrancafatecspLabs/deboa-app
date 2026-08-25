@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#faf9f7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="DeBoa" />
@@ -11,9 +11,39 @@
     <link rel="manifest" href="./manifest.json" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <title>DeBoa</title>
+    <style>
+      /*
+        A marca precisa aparecer antes de qualquer JavaScript: num celular,
+        o intervalo entre tocar no ícone e o React montar é uma tela em
+        branco. Isto está embutido, sem fonte externa e sem requisição, para
+        pintar no primeiro quadro.
+      */
+      #splash {
+        position: fixed; inset: 0; z-index: 9999;
+        display: grid; place-items: center;
+        background: #faf9f7;
+        transition: opacity 0.35s ease;
+      }
+      #splash.out { opacity: 0; pointer-events: none; }
+      #splash .mark {
+        font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "SF Pro Text", sans-serif;
+        font-size: 34px; font-weight: 600; letter-spacing: -0.04em;
+        color: #201d19;
+      }
+      #splash .mark i { font-style: normal; color: #c0552e; }
+    </style>
   </head>
   <body>
+    <div id="splash" aria-hidden="true"><span class="mark">DeBoa<i>.</i></span></div>
     <div id="root"></div>
+    <script>
+      // Rede de segurança: se o app não montar, a marca não pode ficar
+      // presa por cima do erro.
+      setTimeout(function () {
+        var s = document.getElementById("splash");
+        if (s) s.classList.add("out");
+      }, 4000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

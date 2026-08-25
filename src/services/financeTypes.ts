@@ -123,6 +123,32 @@ export type Pact = {
   createdAt: string;
 };
 
+/** Quanto vai para uma caixinha em um mês. */
+export type PlanAllocation = {
+  goalId: string;
+  amount: number;
+};
+
+/**
+ * O plano de um mês: como o dinheiro que entrou foi dividido.
+ *
+ * É o contrário de uma planilha de gastos. Não registra o que saiu — decide,
+ * uma vez, para onde vai, e a partir daí a única pergunta que importa é
+ * quanto sobrou livre.
+ */
+export type MonthPlan = {
+  /** yyyy-mm */
+  month: string;
+  /** Renda considerada quando o plano foi fechado. */
+  income: number;
+  essentials: number;
+  bills: number;
+  allocations: PlanAllocation[];
+  /** Combinados que a pessoa assumiu para este mês. */
+  pactIds: string[];
+  closedAt: string;
+};
+
 export type FinancialProfile = {
   financialDataSource: FinancialDataSource;
   completedSteps: number;
@@ -147,6 +173,8 @@ export type FinancialProfile = {
   habits: Habit[];
   goals: Goal[];
   pacts: Pact[];
+  /** Um por mês, do mais recente para o mais antigo. */
+  plans: MonthPlan[];
 
   createdAt: string;
   updatedAt: string;
