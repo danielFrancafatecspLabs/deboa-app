@@ -103,51 +103,15 @@ pedido. A checagem de usuário acontece dentro da função. Ver
 
 </details>
 
-## Referência das credenciais
-
-### 1. Guardar as credenciais no servidor
-
-Use o secret **novo**, depois de rotacionar. O antigo deve ser considerado
-comprometido se já passou por qualquer chat, log ou commit.
+## Conferir depois do deploy
 
 ```bash
-supabase login
-supabase link --project-ref hmasenjcnpajirpeushg
-
-supabase secrets set \
-  PLUGGY_CLIENT_ID=seu-client-id \
-  PLUGGY_CLIENT_SECRET=seu-client-secret-novo \
-  ALLOWED_ORIGINS=https://danielfrancafatecsplabs.github.io
-```
-
-`ALLOWED_ORIGINS` é uma lista separada por vírgula. Sem ela nenhuma origem
-passa — de propósito: um curinga deixaria qualquer site chamar a função com o
-token de alguém logado.
-
-`SUPABASE_URL` e `SUPABASE_ANON_KEY` já existem no ambiente das Edge Functions.
-
-### 2. Publicar as functions
-
-```bash
-supabase functions deploy pluggy-connect-token
-supabase functions deploy pluggy-sync
-```
-
-### 3. Conferir
-
-```bash
-# Sem token: tem que dar 401.
+# Sem token: tem que dar 401. Se vier 404, o deploy não pegou.
 curl -i -X POST https://hmasenjcnpajirpeushg.supabase.co/functions/v1/pluggy-connect-token
-
-# Com um token de sessão de verdade: tem que devolver accessToken.
-curl -s -X POST https://hmasenjcnpajirpeushg.supabase.co/functions/v1/pluggy-connect-token \
-  -H "Authorization: Bearer SEU_ACCESS_TOKEN_DO_SUPABASE" \
-  -H "Content-Type: application/json" -d '{}'
 ```
 
-No app: **Gastos → Conectar meu banco**. Em sandbox, a Pluggy oferece
-conectores de teste (`includeSandbox`), úteis antes de apontar para um banco
-real.
+No app: **Gastos → Conectar meu banco**. A Pluggy oferece conectores de sandbox,
+úteis para percorrer o fluxo inteiro antes de apontar para um banco de verdade.
 
 ## Como o extrato vira Mapa
 
