@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { CreditCard, LogOut, Repeat, Target, User as UserIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ChoiceGrid, Progress } from "@/components/mapa/primitives";
-import { DayPicker, EditRow, Group, MoneyRow, ReadRow } from "@/components/perfil/editables";
+import { DayPicker, EditRow, Group, MoneyRow, ReadRow } from "@/components/editables";
 import { Action, Card, Pill } from "@/components/ui-kit";
 import { useAuth } from "@/hooks/useAuth";
 import { useFinancialProfile } from "@/hooks/useFinancialProfile";

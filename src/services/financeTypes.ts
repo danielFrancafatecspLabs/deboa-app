@@ -77,6 +77,35 @@ export type EssentialExpenses = {
   other: number;
 };
 
+/**
+ * Um gasto fixo que se repete e não é essencial: streaming, academia,
+ * nuvem, jogo. Sai todo mês igual, mas cancelar é uma escolha — e é por
+ * isso que ele não mora junto do aluguel.
+ */
+export type Subscription = {
+  id: string;
+  emoji: string;
+  name: string;
+  /** Valor mensal. */
+  amount: number;
+  /** Dia da cobrança, quando a pessoa sabe. */
+  dueDay: number | null;
+};
+
+/**
+ * Benefícios que entram como crédito e não como dinheiro.
+ *
+ * VR e VT não são renda livre: só compram uma coisa. Tratar R$ 800 de
+ * vale-refeição como salário faz o DeBoa achar que sobra mais do que sobra;
+ * ignorá-los faz achar que o mercado pesa mais do que pesa.
+ */
+export type Benefits = {
+  /** Vale-refeição / alimentação por mês. */
+  mealVoucher: number;
+  /** Vale-transporte por mês. */
+  transportVoucher: number;
+};
+
 export type HabitPeriod = "week" | "month";
 
 export type Habit = {
@@ -143,6 +172,8 @@ export type MonthPlan = {
   income: number;
   essentials: number;
   bills: number;
+  /** Opcional: planos fechados antes das assinaturas existirem não têm. */
+  subscriptions?: number;
   allocations: PlanAllocation[];
   /** Combinados que a pessoa assumiu para este mês. */
   pactIds: string[];
@@ -170,6 +201,8 @@ export type FinancialProfile = {
   creditCards: CreditCard[];
 
   essentialExpenses: EssentialExpenses;
+  subscriptions: Subscription[];
+  benefits: Benefits;
   habits: Habit[];
   goals: Goal[];
   pacts: Pact[];

@@ -156,6 +156,8 @@ export const EMPTY_PROFILE: FinancialProfile = {
     education: 0,
     other: 0,
   },
+  subscriptions: [],
+  benefits: { mealVoucher: 0, transportVoucher: 0 },
   habits: [],
   goals: [EMERGENCY_GOAL],
   pacts: [],

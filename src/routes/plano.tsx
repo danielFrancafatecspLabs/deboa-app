@@ -135,6 +135,9 @@ function PlanPage() {
             <Line label="Entrou" value={plan.income} strong />
             <Line label="Essencial do mês" value={-plan.essentials} />
             {plan.bills > 0 ? <Line label="Faturas" value={-plan.bills} /> : null}
+            {plan.subscriptions ? (
+              <Line label="Assinaturas" value={-plan.subscriptions} />
+            ) : null}
             {plan.allocations.map((a) => {
               const goal = goalOf(a.goalId);
               return (
@@ -242,6 +245,7 @@ function PlanPage() {
         income: suggestion.income,
         essentials: suggestion.essentials,
         bills: suggestion.bills,
+        subscriptions: suggestion.subscriptions,
         allocations,
         pactIds,
         closedAt: new Date().toISOString(),
@@ -292,6 +296,9 @@ function PlanPage() {
             <Line label="Entrou" value={suggestion.income} strong />
             <Line label="Essencial do mês" value={-suggestion.essentials} />
             {suggestion.bills > 0 ? <Line label="Faturas" value={-suggestion.bills} /> : null}
+            {suggestion.subscriptions > 0 ? (
+              <Line label="Assinaturas" value={-suggestion.subscriptions} />
+            ) : null}
             <div className="border-t border-border pt-2.5">
               <Line label="Sobra para você decidir" value={suggestion.surplus} strong />
             </div>

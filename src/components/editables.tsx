@@ -3,7 +3,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Building blocks for the profile screen.
+ * Building blocks for the screens that are a reading first and a form second.
  *
  * The screen is a reading first and a form second: rows show what DeBoa knows
  * and open into an editor only when tapped. That keeps five numbers legible on

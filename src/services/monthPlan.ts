@@ -1,10 +1,5 @@
-import {
-  cardTotals,
-  essentialTotal,
-  goalMath,
-  habitMonthlyCost,
-  totalNetIncome,
-} from "./financeMath";
+import { cardTotals, goalMath, habitMonthlyCost } from "./financeMath";
+import { breakdown } from "./spending";
 import type { FinancialProfile, Goal, MonthPlan, PlanAllocation } from "./financeTypes";
 
 /**
@@ -53,6 +48,7 @@ export type PlanSuggestion = {
   income: number;
   essentials: number;
   bills: number;
+  subscriptions: number;
   /** O que sobra depois do que já está comprometido. */
   surplus: number;
   allocations: PlanAllocation[];
@@ -74,10 +70,13 @@ export type PlanSuggestion = {
  * menos — e o plano diz isso em voz alta em vez de fingir que fechou.
  */
 export function suggestPlan(profile: FinancialProfile, today = new Date()): PlanSuggestion {
-  const income = totalNetIncome(profile);
-  const essentials = essentialTotal(profile.essentialExpenses);
-  const bills = cardTotals(profile.creditCards, today).bills;
-  const surplus = Math.max(income - essentials - bills, 0);
+  const b = breakdown(profile, today);
+  const income = b.income;
+  // O que o salário realmente banca: o vale-refeição já pagou a parte dele.
+  const essentials = b.essentialFromSalary;
+  const subscriptions = b.subscriptions;
+  const bills = b.bills;
+  const surplus = Math.max(income - essentials - subscriptions - bills, 0);
 
   const ordered = goalsByPriority(profile.goals);
   const needs = ordered.map((goal) => ({
@@ -107,6 +106,7 @@ export function suggestPlan(profile: FinancialProfile, today = new Date()): Plan
     income,
     essentials,
     bills,
+    subscriptions,
     surplus,
     allocations,
     needed: Math.round(needed),
@@ -120,7 +120,9 @@ export function suggestPlan(profile: FinancialProfile, today = new Date()): Plan
 
 export function planFree(plan: MonthPlan): number {
   const allocated = plan.allocations.reduce((sum, a) => sum + a.amount, 0);
-  return Math.max(plan.income - plan.essentials - plan.bills - allocated, 0);
+  // Planos fechados antes das assinaturas existirem não têm o campo.
+  const subscriptions = plan.subscriptions ?? 0;
+  return Math.max(plan.income - plan.essentials - plan.bills - subscriptions - allocated, 0);
 }
 
 export function planAllocated(plan: MonthPlan): number {

@@ -61,6 +61,16 @@
   --border: oklch(0.92 0.006 80);
   --input: oklch(0.92 0.006 80);
   --ring: oklch(0.58 0.16 34);
+
+  /*
+    Os três tipos de dinheiro do mês, na tela de gastos. Derivados da paleta
+    do app e validados: separação para daltonismo ΔE 18,7 no pior par
+    adjacente, bem acima do piso de 8. O amarelo tem contraste 2,1 contra o
+    fundo, então toda fatia carrega rótulo visível — nunca só a cor.
+  */
+  --spend-essencial: oklch(0.5 0.11 55);
+  --spend-opcional: oklch(0.76 0.16 75);
+  --spend-livre: oklch(0.58 0.16 34);
 }
 
 @layer base {
